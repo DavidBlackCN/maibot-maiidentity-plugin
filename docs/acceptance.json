@@ -10,7 +10,7 @@
   "sdk_version": "2.15.0",
   "maivita_commit": "7ec8fa99b6a2745844913465142e86764167e427",
   "candidate_files": {
-    "_manifest.json": "db960e9a33218a6f7db308e5e6494f1e07514e6af714dd7376aed464d9fca5cf",
+    "_manifest.json": "8c80128ab7078adc81fe74d40dfc235503d114c7d0a1b523422eee5a944f4ad9",
     "config.py": "b1e11170f3a87834bfeafa0f1ecfa7b5f7e99ff8225e603c3c0501c89ab5f465",
     "maiidentity/__init__.py": "95013b247d859b57f582c414798fe53485cc540541672cfcbef86e0cf3d6ef6d",
     "maiidentity/compatibility/__init__.py": "9689740afe6c87f1b31d1cda224e0c171e24f5c41dcd665e00020d77249e0e35",
@@ -132,7 +132,7 @@
     "tests/test_operator_bootstrap.py": "4975fc86c1ea182cc60f6bbd8288227f9569bc605d132633f3bd9cb5fdd4e367",
     "tests/test_policy_relations.py": "1f1d95899aa699b86ff8ed857f08419460d1de4a97a0b33a24e913d5ae04c6d0",
     "tests/test_security_regressions.py": "10e7e1f63b0b5148e9748491824da9d6f585fbc0214876ac79cc074d24f64b1d",
-    "tests/test_static_package.py": "cca6c96abcd42aca573e7cab4ebe30ee99e7c34c20bdb58221056deca7c6553b",
+    "tests/test_static_package.py": "892e86edf316daa61f711315eea410433b395fb88467802739b546205927d539",
     "tests/__init__.py": "eb49f57297d83cef6c5810e1aca130f3cde0fdca3ae2372740fb3e5bc5ddeffe",
     "integration_tests/consumer.py": "ede2f3980ef095dd9c6c1812974d06d78aebeb786b95ab6e284235ad283a6766",
     "integration_tests/host_scenario.py": "f36d79a8711be41fe8028490dfc1da561e2e9ae3a639714282bdf94ffdfac352",

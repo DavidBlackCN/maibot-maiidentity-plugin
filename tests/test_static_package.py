@@ -13,7 +13,9 @@ def test_versions_minimal_capabilities_single_entry_license_and_domain_boundarie
     assert manifest["id"] == PLUGIN_ID and manifest["version"] == PLUGIN_VERSION == "3.0.0"
     assert (CONFIG_VERSION, DB_SCHEMA, API_MAJOR) == ("3", 1, "1")
     assert set(manifest["capabilities"]) == {"message.get_by_id", "config.get", "component.list_loaded_plugins", "send.text"}
-    assert hashlib.sha256((ROOT/"LICENSE").read_bytes()).hexdigest() == "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    # Git and Windows checkouts may use different line endings for the same license.
+    license_bytes = (ROOT/"LICENSE").read_bytes().replace(b"\r\n", b"\n")
+    assert hashlib.sha256(license_bytes).hexdigest() == "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
     assert "风花叶" in (ROOT/"plugin.py").read_text(encoding="utf-8")
     for path in (ROOT/"maiidentity").rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"))
