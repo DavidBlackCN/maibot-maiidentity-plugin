@@ -1,0 +1,35 @@
+# Fresh installation, no accounts or privileges. Stop old Owner Auth first.
+[plugin]
+enabled = false
+config_version = "3"
+acknowledgement = ""
+instance_id = ""
+writer_lock = ""
+migration_id = ""
+
+[identity]
+adapter_namespace = ""
+route_scope = ""
+accounts = []
+
+[roles]
+entries = []
+
+[context]
+enabled = true
+budget_bytes = 2048
+cache_ttl_seconds = 300
+planner_actor_enabled = false
+alias_enabled = false
+guard_mode = "context_only"
+
+[security]
+binding_challenge_enabled = false
+raw_prompt_logging = false
+
+[compatibility]
+legacy_templates_enabled = false
+
+[integrations]
+enabled = false
+cross_plugin_privileged_enabled = false

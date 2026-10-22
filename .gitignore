@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.integration/
+dist/
+evidence/
+config.toml
+*.db
+*.db-wal
+*.db-shm

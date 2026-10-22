@@ -1,0 +1,46 @@
+# 安装
+
+MaiIdentity 3.0.0 只验证了 Windows / Python 3.13、MaiBot Host 1.3.12（`5c7637e6913c84d1c3d5e742fa9e95a7e70d3501`）和 SDK 2.15.0。manifest 按此收窄版本范围。安装不等于生产验收。
+
+先停机并移走旧 `com.khiqwq.owner-auth-plugin` 的可扫描目录，备份旧代码、config.toml 和数据根。不要把旧配置复制到新插件后仅修改版本号；按 [迁移](MIGRATION.md) 离线转换。同一 Host 只放一个 MaiIdentity 目录。加载检查旧 ID 的已加载注册表，失败则拒绝启动；Host 没有原子锁定两个不同插件 ID 的接口，因此停用旧目录是安装前提。
+
+根 plugin.py 是唯一入口；复制安装包内容到一个插件目录。保留 LICENSE。配置仍位于该目录的 config.toml；SDK 数据根按新 ID 分配为实例目录下 `data/plugins/davidblackcn.maibot-maiidentity-plugin/`，不能沿用旧 ID 猜测路径。源码导入不会创建数据库。全新默认配置禁用、无账号、无管理员。已有旧格式会明确校验失败，不自动清空。
+
+全新隔离实例的合成配置示例：
+
+```toml
+[plugin]
+enabled = true
+config_version = "3"
+acknowledgement = "local-operator-reviewed"
+instance_id = "synthetic-instance"
+writer_lock = "D:/MaiBot-test/locks/maiidentity.lock"
+migration_id = ""
+
+[identity]
+adapter_namespace = "synthetic-qq-adapter"
+route_scope = "default"
+
+[[identity.accounts]]
+platform = "qq"
+adapter_namespace = "synthetic-qq-adapter"
+account_id = "10001"
+enabled = true
+```
+
+`adapter_namespace` 是本机操作者为受信适配器指定的稳定命名空间；`route_scope` 必须与该适配器经过 Host 路由的真实 scope 精确一致。消息还必须具有与 Host 配置 `bot.qq_account` 相同的 `account_id`；字段缺失、跨路由或自机器人消息不产生主体投影。当前没有多机器人账号公共身份枚举适配；主账号未知时仅保留一般规则。上下文只说明消息作者，不能证明当前 API 调用者或真实人类身份。
+
+管理员必须单独、显式配置。以下片段追加到上述合成配置，只给明确 context 资源内的实例管理角色，不给 MaiVita 能力：
+
+```toml
+[[roles.entries]]
+role = "operator_admin"
+account = { platform = "qq", adapter_namespace = "synthetic-qq-adapter", account_id = "10001", enabled = true }
+scope = { kind = "instance", instance_id = "synthetic-instance", character_id = "default", platform = "qq", adapter_namespace = "synthetic-qq-adapter", resource_type = "context", resource_id = "default" }
+```
+
+配置数组有固定 schema，不按 user_count 动态生成槽位。复杂条目建议离线编辑；未承诺任意 Host WebUI 数组编辑控件。角色/账号配置改变要求重载：旧服务先关闭，下一次加载在单事务内调和配置来源记录并增加 revision。相同配置重载不会恢复已撤销绑定。最后一个管理员的恢复或移除只走本机配置/离线管理，聊天没有恢复入口。
+
+迁移数据的配置与 activation.json 绑定；不要在线直接修改已激活迁移配置，修改后会因摘要不匹配拒绝启动。当前工具只支持首次离线激活，后续成对配置更新需要独立运维流程；不要删除 migration_id 或标记绕过校验。
+
+writer_lock 必须是所有新实例共用的绝对路径，不能按进程各建一份。另有 SDK 数据根内的 writer.lock 防止同一数据根因误配部署锁而出现两个写者，两把锁均在失败/卸载时释放。运行数据只使用 SDK 授予的数据根；不要放入源码目录。`/owner_auth_status` 与 `/maiidentity_status` 仅显示公开就绪状态，走普通 send.text，没有静默豁免、账号名单或全局最近操作。

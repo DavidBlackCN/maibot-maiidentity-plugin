@@ -1,0 +1,19 @@
+name: deterministic-and-runner
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m venv .venv
+      - run: .venv/Scripts/python -m pip install -r requirements-dev.txt
+      - run: .venv/Scripts/python tools/run_tests.py
+      - run: .venv/Scripts/python tools/setup_host_fixture.py
+      - run: python -m venv .integration/host-env
+      - run: .integration/host-env/Scripts/python -m pip install -r requirements-host.txt
+      - run: .integration/host-env/Scripts/python tools/run_runner_smoke.py
+      - run: .integration/host-env/Scripts/python tools/run_host_smoke.py --isolated-root "${{ github.workspace }}/.integration/ci-host"
+      - run: .venv/Scripts/python tools/package.py

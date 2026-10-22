@@ -1,145 +1,40 @@
-# 用户身份验证插件（自用 fork）
+# MaiIdentity
 
-> 这是 [khiqwq/owner_auth_plugin](https://github.com/khiqwq/owner_auth_plugin) 的自用 fork。
->
-> 本仓库最初是因为原插件尚未适配新版 MaiBot SDK，临时迁移到 MaiBot 1.0 / maibot_sdk 2.x 后自用。现在原项目已经完成新版 SDK 适配，**建议优先使用原插件**。本仓库只保留个人自用修改，不作为推荐分发版本。
+MaiIdentity 为 MaiBot 提供命名空间账号与内部主体、确定性本地策略、独立确认关系及有界模型上下文。它从 Owner Auth 2.1.0 重构而来；“主人/恋人”、昵称、聊天声明和动态好感度都不产生权限。
 
-## 当前版本
+当前插件 **3.0.0**；配置 **"3"**；SQLite schema **1**；API major **"1"**。插件 ID 为 `davidblackcn.maibot-maiidentity-plugin`。仓库已更名为 [maibot-maiIdentity-plugin](https://github.com/DavidBlackCN/maibot-maiIdentity-plugin)，保留原 Owner Auth 仓库历史。
 
-- 插件版本：`2.1.0`
-- 适配 MaiBot：`1.0.0` ~ `1.99.x`
-- 适配 SDK：`maibot_sdk 2.x`
-- 原项目：<https://github.com/khiqwq/owner_auth_plugin>
-- 本 fork：<https://github.com/DavidBlackCN/maibot-owner-auth-plugin>
+已验证 Windows / Python 3.13、固定 Host 1.3.12 与 SDK 2.15.0。默认禁用且没有任何账号或管理员。先停止旧插件，按 [安装](docs/INSTALL.md) 或 [离线迁移](docs/MIGRATION.md) 准备配置与独立数据；不要只修改旧配置版本号，不要双启新旧 ID。
 
-## 功能
+实现包括：
 
-- 只按 QQ 号验证身份，不依赖昵称或群名片。
-- 支持多个用户槽位，每个用户可独立配置 QQ、昵称、限制群聊和提示词模板。
-- 支持同一 QQ 的全局配置与群专属配置，群专属优先。
-- 在 `maisaka.replyer.before_request` 回复前通过 `extra_prompt` 注入身份提示词。
-- 可选在 `maisaka.planner.before_request` 行动规划阶段注入身份提示词。
-- 非用户安全提醒默认关闭，可按需启用。
-- 对发言者昵称和消息内容做清洗，占位符单遍替换，降低二阶提示词注入风险。
-- 提供 `/owner_auth_status` 状态命令，便于排查是否命中用户。
+- 严格账号 ID、绑定唯一性与撤销 epoch，双端挑战领域状态机。
+- RBAC、无环角色继承、能力、显式 deny 和结构化 Scope，角色管理防自提权。
+- 有用途/参数/范围/时间/次数/预算约束的委托预留、回执及未知结果对账。
+- 有来源、可见性与 revision 的确认关系；私密关系不进入模型投影。
+- 精确消息与缓存冲突拒绝，Replyer subject 与 actor 分离；风险昵称中性化，自有上下文块幂等且保留其他插件文本。
+- 全格式旧配置预览、独立目标、备份/校验、成对激活及回滚快照。
 
-## 安装
+跨插件特权、聊天绑定、Planner actor、alias 真实传输、旧模板和原始 prompt 日志关闭。`get_contract@1` 公开实际状态；其余受保护 API 返回 UNTRUSTED_CONTEXT。MaiVita 桥保持 v1.0.0 严格字段，H01/H02/H03 与统一策略传输尚未联通。身份历史和模型输出不能构成执行许可。
 
-1. 将本插件目录放入 MaiBot 的 `plugins/` 目录。
-2. 重启 MaiBot 或重载插件。
-3. 首次加载后打开 WebUI 插件配置页，或编辑生成的 `config.toml`。
-4. 在「用户」页填写至少一个用户 QQ 号。
+`/owner_auth_status` 与 `/maiidentity_status` 是脱敏只读状态别名，通过普通发送权限响应，不泄露账号名单或全局最近事件。
 
-未配置任何有效用户 QQ 时，插件保持静默，不会对任何人注入提示词。
+验证命令：
 
-## 配置结构
-
-新版配置分为三个区域：
-
-- `plugin`：插件总开关、用户数量控制、日志等级、缓存有效期、planner 注入开关。
-- `user1` ~ `userN`：用户槽位，数量由 `plugin.user_count` 控制。
-- `non_owner`：非用户安全提醒开关和模板。
-
-### 用户数量控制
-
-`plugin.user_count` 决定生成多少个用户槽位。调大后需要保存并禁用再启用插件，或重启 MaiBot，新的槽位才会出现在配置模型中。
-
-调小后，超出数量的用户槽位会在插件重载时清空。只是临时停用某个用户时，请关闭该用户槽位的「启用此用户」，不要调小用户数量。
-
-### 用户槽位
-
-每个用户槽位支持：
-
-- `enabled`：是否启用此用户。
-- `qq`：用户 QQ 号，身份验证唯一凭据。
-- `nickname`：模板中显示的用户称呼。
-- `group_id`：限制群聊群号，留空表示全局生效。
-- `prompt_template`：命中该用户时注入的提示词模板。
-
-如果同一个 QQ 同时配置了全局槽位和某群专属槽位，在对应群里会优先命中群专属槽位。
-
-### 非用户提醒
-
-`non_owner.enable_non_owner_inject` 默认关闭。开启后，非用户发言也会注入安全提醒，适合强防冒充场景，但可能让麦麦对普通群友显得过于警惕，并增加 token 消耗。
-
-## 占位符
-
-用户模板支持：
-
-- `{nickname}` / `{owner_nickname}`：配置中的用户昵称。
-- `{display_name}` / `{user}`：发言者聊天显示名。
-- `{qq}` / `{owner_qq}` / `{user_qq}`：发言者 QQ。
-- `{msg}` / `{message}`：本次消息文本。
-- `{owner_names}`：已配置用户昵称列表。
-
-非用户模板支持同样的显示名、QQ、消息和 `{owner_names}` 占位符。
-
-未知占位符会原样保留，不会导致插件报错。
-
-## 工作原理
-
-插件使用官方 Hook，不再使用 monkey-patch：
-
-- `chat.receive.after_process`：按 `message_id` 短期缓存真人消息的身份。
-- `maisaka.replyer.before_request`：回复前定位发言者并注入身份提示词。
-- `maisaka.planner.before_request`：可选，行动规划前注入身份提示词。
-
-发言者定位顺序：
-
-1. 通过 `reply_message_id` 精确获取被回复的消息。
-2. 如果取不到，再用相同的 `reply_message_id` 查询本插件的本地消息缓存。
-3. 两者都失败时判定为 `unresolved` 并跳过身份注入。
-
-身份只能来自当前 `reply_message_id` 对应的消息。插件不会按 `session_id` 猜测最近发言者；缓存也带 TTL
-和数量上限。即使查询失败或缓存被淘汰，也只会少注入一次，不会把其他人误识别为主人。
-
-`planner` 注入保持默认关闭。当前 planner hook 通常只有 `session_id`，无法证明是哪一条消息触发了规划；
-这种情况下插件会直接跳过。只有宿主明确提供精确 `reply_message_id` 时才可能注入，因此不要把 planner
-链路当作独立、可靠的主人身份认证机制。
-
-## 从 2.0.x 升级
-
-本 fork 的 `2.0.x` 使用过如下配置：
-
-```toml
-[owner_auth]
-enable_auth = true
-
-[[owner_auth.users]]
-nickname = "用户"
-owner_qq = 123456789
-prompt_template = "..."
+```powershell
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements-dev.txt
+.venv/Scripts/python tools/run_tests.py
+.venv/Scripts/python tools/setup_host_fixture.py
+python -m venv .integration/host-env
+.integration/host-env/Scripts/python -m pip install -r requirements-host.txt
+.integration/host-env/Scripts/python tools/run_runner_smoke.py
+.integration/host-env/Scripts/python tools/run_host_smoke.py --isolated-root D:/test/new-maiidentity-host
+.venv/Scripts/python tools/package.py
 ```
 
-升级到 `2.1.0` 后，插件会自动迁移到新的 `user1`、`user2` 固定槽位结构，并保留已有 QQ、昵称和模板。
+基础 Host 冒烟使用原生独立插件运行时、合成消息与临时数据库，不连接真实平台、不发群消息、不调用付费模型。它不等于完整 bot CLI、模型效果、生态联合验收或生产批准。详细结果与指纹见 [验收](docs/ACCEPTANCE.md)；边界见 [限制](docs/LIMITATIONS.md)。
 
-建议升级前备份 `config.toml`。迁移完成后，旧的 `owner_auth` 结构会被新结构取代。
+其他说明：[API](docs/API.md)、[MaiVita 契约](docs/CONTRACTS.md)、[源码导航](docs/SOURCE_LAYOUT.md)、[回滚](docs/ROLLBACK.md)、[来源](docs/SOURCES.md)。
 
-## 状态命令
-
-在聊天中发送：
-
-```text
-/owner_auth_status
-```
-
-也可以发送：
-
-```text
-身份验证状态
-主人验证状态
-```
-
-命令会返回插件启用状态、生效用户数、当前 QQ 是否命中、缓存数量和最近一次注入来源。
-
-## 与原插件的关系
-
-本仓库不是原插件的替代发行版。它只是我在原插件尚未更新新版 SDK 时做的自用分支。
-
-现在原插件已经完成 MaiBot 1.0 / maibot_sdk 2.x 适配，并且维护入口更集中，普通用户建议直接使用：
-
-<https://github.com/khiqwq/owner_auth_plugin>
-
-## 许可
-
-GPL-3.0-or-later。原作者与主要设计来自 [khiqwq/owner_auth_plugin](https://github.com/khiqwq/owner_auth_plugin)。
+保留原项目 [khiqwq/owner_auth_plugin](https://github.com/khiqwq/owner_auth_plugin)、风花叶与 DavidBlackCN 的署名及 [GPL-3.0-or-later](LICENSE)。运行实现独立重构，未复制 MaiVita 的生活引擎。内部设计集不随仓库或安装包分发。
