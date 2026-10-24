@@ -18,3 +18,9 @@ H03：固定 Host 的 api.call 确认了调用方 SDK capability，但仅把 api
 H01：可信发送回执的用途、attempt、stream 和一次性消费独立验收，当前 unsupported。H02：插件归属化调频/撤销也独立验收，当前 unsupported。MaiIdentity 不声明或调用 frequency.set_adjust，不发送管理例外消息。
 
 后续联合验收必须验证发行方/caller、真实上下文、请求/动作/资源/流绑定、epoch/revision、过期/撤销/重放、跨进程原子消费，以及身份允许但策略拒绝。JSON Schema、单元端口、原生拒绝路径与生态互通是不同证据层级。
+
+## 2026-10-24 联合审查修复候选补充
+
+固定支持 Host 1.3.12 / SDK 2.15.0，manifest 与加载检查一致。新增能力目录 maihush.mute / maihush.renew / maihush.unmute / maihush.configure，均不可委托，均无内置角色自动授予。执行目标必须是 QQ 的 stream scope、group resource，仍要求独立 external_policy=True。静态目录由本地代码控制，未开放任意插件注册或重定义命名空间的接口。
+
+上述目录只供后续受审计的 H03 适配；当前受保护 API 继续 UNTRUSTED_CONTEXT。Hush 本地命令的授权源未迁移，不采用“本地 owner 或 Identity allow”的双重放行。身份资格、业务规则与实际执行各自独立；关系和预约结果不能冒充远端执行授权。

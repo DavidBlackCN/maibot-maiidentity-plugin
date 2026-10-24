@@ -11,7 +11,11 @@ def envelope(*, data=None, code=None):
 
 
 def descriptor(ready=False):
+    from ..policy.service import MAIHUSH
     return envelope(data={"plugin_id": PLUGIN_ID, "plugin_version": PLUGIN_VERSION, "config_version": CONFIG_VERSION,
+        "host": "1.3.12", "sdk": "2.15.0", "maihush_capabilities": sorted(MAIHUSH),
+        "maihush_delegation": "forbidden", "maihush_policy": "external_business_policy_required",
+        "maihush_scope": {"kind":"stream","resource_type":"group","platform":"qq","identity_source":"local_command_until_H03"},
         "db_schema": DB_SCHEMA, "api_major": API_MAJOR, "ready": ready, "get_contract": "public",
         "protected_methods": {name: "denied_no_trusted_transport" for name in PROTECTED},
         "write_methods": "unsupported", "binding_challenge": "disabled", "legacy_templates": "inactive_only",

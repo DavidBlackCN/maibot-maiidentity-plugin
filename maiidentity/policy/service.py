@@ -16,8 +16,10 @@ ROLES = {
     "service_agent": set(),
 }
 MAIVITA = {"maivita.private.read", "maivita.wake", "maivita.sleep.interrupt", "maivita.replan", "maivita.configure"}
-CAPABILITIES = set().union(*ROLES.values()) | MAIVITA
-NONDELEGABLE = {"identity.role.manage", "identity.binding.manage", "identity.delegation.manage", "relation.confirm.manage", "maivita.configure"}
+MAIHUSH = {"maihush.mute", "maihush.renew", "maihush.unmute", "maihush.configure"}
+# Operator-owned catalogue: declaration grants no role or permission.
+CAPABILITIES = set().union(*ROLES.values()) | MAIVITA | MAIHUSH
+NONDELEGABLE = {"identity.role.manage", "identity.binding.manage", "identity.delegation.manage", "relation.confirm.manage", "maivita.configure"} | MAIHUSH
 
 
 def expand_roles(definitions: dict, role: str, visiting=None) -> set:
@@ -155,6 +157,8 @@ class PolicyService:
             try:
                 opaque(request_id)
                 require(capability in CAPABILITIES, "UNKNOWN_CAPABILITY")
+                if capability in MAIHUSH:
+                    require(scope.kind == 'stream' and scope.resource_type == 'group' and scope.platform == 'qq', 'SCOPE_MISMATCH')
                 self.current(actor)
                 require(scope.platform == actor.account.platform and scope.adapter_namespace == actor.account.adapter_namespace,
                         "SCOPE_MISMATCH")
@@ -166,7 +170,7 @@ class PolicyService:
                 require(not any(g["effect"] == "deny" for g in grants), "EXPLICIT_DENY")
                 require(any(g["effect"] == "allow" for g in grants) or bool(roles), "PERMISSION_DENIED")
                 require(host_allowed is True, "HOST_DENIED")
-                if capability in MAIVITA:
+                if capability in MAIVITA | MAIHUSH:
                     require(external_policy is not None, "POLICY_UNAVAILABLE")
                     require(external_policy is True, "POLICY_DENIED")
                 decision.update(allowed=True, reason_code="ALLOWED")

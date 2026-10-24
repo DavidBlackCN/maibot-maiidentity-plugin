@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import asyncio
 import importlib.metadata
+import os
 import secrets
 import uuid
 
@@ -53,6 +54,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
         if not cfg.plugin.enabled:
             return
         try:
+            require(os.environ.get('MAIBOT_HOST_VERSION') == '1.3.12', 'UNSUPPORTED_HOST')
             require(importlib.metadata.version("maibot-plugin-sdk") == "2.15.0", "UNSUPPORTED_SDK")
             loaded = await self.ctx.component.list_loaded_plugins()
             require(type(loaded) is list, "REGISTRY_UNAVAILABLE")

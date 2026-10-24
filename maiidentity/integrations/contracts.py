@@ -1,5 +1,6 @@
 """Independent implementation of MaiVita v1.0.0 wire fields, not its engine."""
 from datetime import datetime
+import json
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -7,6 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class Contract(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     contract_version: Literal["1.0.0"] = "1.0.0"
+
+    @classmethod
+    def from_wire(cls, value):
+        if type(value) is dict:
+            value = json.dumps(value, allow_nan=False)
+        if type(value) not in (str, bytes):
+            raise ValueError('JSON object or encoded JSON required')
+        return cls.model_validate_json(value)
 
     @model_validator(mode="after")
     def timestamps(self):
