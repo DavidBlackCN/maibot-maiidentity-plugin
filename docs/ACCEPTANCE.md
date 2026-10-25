@@ -1,6 +1,8 @@
 # 验收范围
 
-本版完成独立实现与隔离验证，不自动发布、不声明生产可用。日期 2026-10-22（Asia/Shanghai）。本次通过 76 个 T0 用例、12 项 T1 检查、13 项 T2 检查及迁移 CLI 演练。运行源码指纹和机器摘要见 [acceptance.json](acceptance.json)；固定 Host/SDK 文件锁位于 tests/fixtures/source-lock.json。验收摘要另保留在被忽略的 evidence/；.integration/ 保留可复用 Host 与测试环境，临时实例、日志和重复安装包在验证后清理，不进入 Git 或安装包。
+本版完成独立实现与隔离验证，不声明生产可用。2026-10-25（Asia/Shanghai）对当前源码重新运行 T0、原始 Runner T1、原生 Host T2 及迁移 CLI；精确计数、源码指纹和机器摘要见 [acceptance.json](acceptance.json)。固定 Host/SDK 文件锁位于 tests/fixtures/source-lock.json；其中 MaiVita 提交是历史契约参考，不是当前联合测试的运行版本。
+
+打包现在必须校验报告中的 candidate_files 与实际源码一致，且 T0/T1/T2/迁移均通过；CI 在打包前重新生成这些证据，不能把旧 acceptance.json 随新代码直接发布。仓库外联合收口证据单独记录三个核心插件实际源码与发送链结果。evidence/ 中旧证据已归档，新结果仍不代表真实平台认证。
 
 | 层级 | 已运行命令 | 验证范围 |
 |---|---|---|

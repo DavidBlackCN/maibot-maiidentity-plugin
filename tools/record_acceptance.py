@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import sys
+from datetime import datetime, timezone, timedelta
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -16,9 +17,10 @@ if __name__ == "__main__":
     assert all(report["passed"] is True for report in reports.values())
     assert all(reports[name]["candidate_files"] == candidate for name in ("unit", "runner", "host"))
     lock = json.loads((ROOT/"tests/fixtures/source-lock.json").read_text(encoding="utf-8"))
-    report = {"date": "2026-10-22", "timezone": "Asia/Shanghai", "plugin_version": "3.0.0", "config_version": "3",
+    report = {"date": datetime.now(timezone(timedelta(hours=8))).date().isoformat(), "timezone": "Asia/Shanghai", "plugin_version": "3.0.0", "config_version": "3",
               "db_schema": 1, "api_major": "1", "production_approved": False, "host_commit": lock["host_commit"],
-              "sdk_version": "2.15.0", "maivita_commit": lock["maivita_commit"], "candidate_files": candidate,
+              "sdk_version": "2.15.0", "maivita_reference_commit": lock["maivita_commit"],
+              "maivita_reference_scope": "historical contract reference only; not a joint runtime acceptance", "candidate_files": candidate,
               "T0": {k: reports["unit"][k] for k in ("tests", "failures", "skipped", "python", "command", "passed")},
               "T1": {k: reports["runner"][k] for k in ("cases", "business_ports", "command", "passed")},
               "T2": {k: reports["host"][k] for k in ("cases", "scope", "full_bot_cli", "module_replacements", "command", "passed")},

@@ -24,7 +24,17 @@ def fingerprint():
             for p in sorted([ROOT/"plugin.py", ROOT/"config.py", ROOT/"_manifest.json", *[p for p in (ROOT/"maiidentity").rglob("*.py") if "__pycache__" not in p.parts]])}
 
 
+def verify_acceptance():
+    report=json.loads((ROOT/"docs/acceptance.json").read_text(encoding="utf-8"))
+    assert report.get("candidate_files")==fingerprint(), "stale acceptance: regenerate current gates before packaging"
+    assert all(report.get(layer,{}).get("passed") is True for layer in ("T0","T1","T2","migration_cli")), "incomplete acceptance"
+    validation={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
+        for directory in ('tools','tests','integration_tests') for p in (ROOT/directory).rglob('*.py')}
+    assert report.get('validation_files')==validation, 'stale validation tools/tests: regenerate acceptance'
+
+
 def verify(path):
+    verify_acceptance()
     expected = {p.relative_to(ROOT).as_posix(): p.read_bytes() for p in files()}
     with zipfile.ZipFile(path) as archive:
         assert len(archive.namelist()) == len(set(archive.namelist()))
@@ -37,6 +47,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT/"dist/MaiIdentity-3.0.0.zip")
     args = parser.parse_args()
+    verify_acceptance()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(args.output, "x", zipfile.ZIP_DEFLATED) as archive:
         for path in files():

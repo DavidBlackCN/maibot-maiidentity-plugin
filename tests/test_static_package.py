@@ -33,3 +33,12 @@ def test_package_allowlist_excludes_internal_documents_data_and_tests():
     assert not any(n.startswith(("tests/", "integration_tests/", ".integration/", "evidence/")) for n in names)
     assert not any(n.endswith((".db", ".log", "CODEX_PROMPT.md", "MAIIDENTITY_ARCHITECTURE.md", "IDENTITY_POLICY_SPEC.md", "RELATION_INTEGRITY_SPEC.md", "CODEX_IMPLEMENTATION_PLAN.md")) for n in names)
     assert "config.toml" not in names
+
+
+def test_package_refuses_stale_acceptance(monkeypatch):
+    import pytest
+    from tools import package
+    # Force a different candidate without trusting the checked-in report.
+    monkeypatch.setattr(package, 'fingerprint', lambda: {'changed.py': 'different'})
+    with pytest.raises(AssertionError, match='stale acceptance'):
+        package.verify_acceptance()

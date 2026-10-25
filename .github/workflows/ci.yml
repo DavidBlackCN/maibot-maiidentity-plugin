@@ -16,4 +16,16 @@ jobs:
       - run: .integration/host-env/Scripts/python -m pip install -r requirements-host.txt
       - run: .integration/host-env/Scripts/python tools/run_runner_smoke.py
       - run: .integration/host-env/Scripts/python tools/run_host_smoke.py --isolated-root "${{ github.workspace }}/.integration/ci-host"
+      - run: .venv/Scripts/python tools/rehearse_migration.py
+      - run: .venv/Scripts/python tools/record_acceptance.py
       - run: .venv/Scripts/python tools/package.py
+      - name: Preserve current CI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maiidentity-checks-${{ github.sha }}
+          path: |
+            evidence/*.json
+            evidence/unit.xml
+            docs/acceptance.json
+            dist/MaiIdentity-3.0.0.zip
