@@ -1,6 +1,6 @@
 # 安装
 
-MaiIdentity 3.0.0 的修复候选只支持 Windows / Python 3.13、MaiBot Host 1.3.12（`5c7637e6913c84d1c3d5e742fa9e95a7e70d3501`）和 SDK 2.15.0。manifest 的最小/最大版本现已同时收紧到上述精确版本，加载时同时验证 Host 环境版本与 SDK。Host 1.3.14 / SDK 2.16.0 是未验收的升级候选，不在支持范围内。安装不等于生产验收。
+MaiIdentity 3.0.0 修复构建接受两组精确配对：原 Windows / Python 3.13、Host 1.3.12（`5c7637e6913c84d1c3d5e742fa9e95a7e70d3501`）/ SDK 2.15.0；以及 Linux / Python 3.12.15、Host 1.3.15（`062d45cf8bd4272ac57d7ec03fcf405e5a458211`）/ SDK 2.16.0。Manifest 上下限并不授权中间版本或混搭，运行时仍检查精确配对。使用 Bot 自己的虚拟环境。安装不等于真实 QQ 或生产验收。
 
 先停机并移走旧 `com.khiqwq.owner-auth-plugin` 的可扫描目录，备份旧代码、config.toml 和数据根。不要把旧配置复制到新插件后仅修改版本号；按 [迁移](MIGRATION.md) 离线转换。同一 Host 只放一个 MaiIdentity 目录。加载检查旧 ID 的已加载注册表，失败则拒绝启动；Host 没有原子锁定两个不同插件 ID 的接口，因此停用旧目录是安装前提。
 

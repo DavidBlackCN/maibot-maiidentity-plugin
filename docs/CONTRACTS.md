@@ -1,6 +1,6 @@
 # MaiVita 契约桥 1.0.0
 
-固定参考 MaiVita `7ec8fa99b6a2745844913465142e86764167e427`（插件 0.3.1，契约 1.0.0）。本插件未修改 MaiVita 仓库，未实现它的生活引擎。
+历史契约形状参考 MaiVita `7ec8fa99b6a2745844913465142e86764167e427`（插件 0.3.1，契约 1.0.0）。本插件未修改 MaiVita 仓库，未实现它的生活引擎。
 
 | 类型 | 严格字段 |
 |---|---|
@@ -24,3 +24,5 @@ H01：可信发送回执的用途、attempt、stream 和一次性消费独立验
 固定支持 Host 1.3.12 / SDK 2.15.0，manifest 与加载检查一致。新增能力目录 maihush.mute / maihush.renew / maihush.unmute / maihush.configure，均不可委托，均无内置角色自动授予。执行目标必须是 QQ 的 stream scope、group resource，仍要求独立 external_policy=True。静态目录由本地代码控制，未开放任意插件注册或重定义命名空间的接口。
 
 上述目录只供后续受审计的 H03 适配；当前受保护 API 继续 UNTRUSTED_CONTEXT。Hush 本地命令的授权源未迁移，不采用“本地 owner 或 Identity allow”的双重放行。身份资格、业务规则与实际执行各自独立；关系和预约结果不能冒充远端执行授权。
+
+当前 get_contract 的 host/sdk 字段报告实际运行版本；支持 1.3.12/2.15.0 和 1.3.15/2.16.0 配对。此兼容性修订没有开放 H03、委托传输或跨插件写权限。
