@@ -6,7 +6,7 @@ MaiIdentity 为 MaiBot 提供命名空间账号与内部主体、确定性本地
 
 当前插件 **3.0.0**；配置 **"3"**；SQLite schema **1**；API major **"1"**。插件 ID 为 `davidblackcn.maibot-maiidentity-plugin`。仓库已更名为 [maibot-maiIdentity-plugin](https://github.com/DavidBlackCN/maibot-maiIdentity-plugin)，保留原 Owner Auth 仓库历史。
 
-已验证 Windows / Python 3.13、固定 Host 1.3.12 与 SDK 2.15.0。默认禁用且没有任何账号或管理员。先停止旧插件，按 [安装](docs/INSTALL.md) 或 [离线迁移](docs/MIGRATION.md) 准备配置与独立数据；不要只修改旧配置版本号，不要双启新旧 ID。
+已验证 Windows / Python 3.13、固定 Host 1.3.12 与 SDK 2.15.0。默认启用基本只读能力，没有任何预置账号或管理员。实例 ID 自动生成持久保存，锁使用 SDK 数据目录；默认空 route_scope 精确匹配 Snowluma 的 scope=None。先停止旧插件，按 [安装](docs/INSTALL.md) 或 [离线迁移](docs/MIGRATION.md) 准备配置与独立数据；不要只修改旧配置版本号，不要双启新旧 ID。
 
 实现包括：
 

@@ -26,3 +26,6 @@ H01：可信发送回执的用途、attempt、stream 和一次性消费独立验
 上述目录只供后续受审计的 H03 适配；当前受保护 API 继续 UNTRUSTED_CONTEXT。Hush 本地命令的授权源未迁移，不采用“本地 owner 或 Identity allow”的双重放行。身份资格、业务规则与实际执行各自独立；关系和预约结果不能冒充远端执行授权。
 
 当前 get_contract 的 host/sdk 字段报告实际运行版本；支持 1.3.12/2.15.0 和 1.3.15/2.16.0 配对。此兼容性修订没有开放 H03、委托传输或跨插件写权限。
+
+
+2026-10-27 默认安装修订：Vita 的空 allowed_streams 表示所有 Host 接入会话，非空仍精确限制；Identity 的空 route_scope 仅匹配消息 scope=None。自动实例标识、自动锁和默认启用均不建立可信调用者身份，不开放 H01/H02/H03 或跨插件特权。

@@ -1,3 +1,5 @@
+> 2026-10-27 默认安装修订：新增默认加载、自动锁/实例标识及无 scope 路由验证。此前完整 I1 模型通过记录仅属于此前源码；本轮未追加真实模型调用或真实 QQ 验收。当前构建以随包证据和最新 CI 为准。
+
 # 验收范围
 
 本版完成独立实现与隔离验证，不声明生产可用。2026-10-25（Asia/Shanghai）对当前源码重新运行 T0、原始 Runner T1、原生 Host T2 及迁移 CLI；精确计数、源码指纹和机器摘要见 [acceptance.json](acceptance.json)。固定 Host/SDK 文件锁位于 tests/fixtures/source-lock.json；其中 MaiVita 提交是历史契约参考，不是当前联合测试的运行版本。

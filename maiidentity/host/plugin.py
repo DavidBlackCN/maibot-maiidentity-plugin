@@ -40,6 +40,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
         self.resolver = self.projector = self.challenges = None
         self.bot_account = ""
         self.data_lease = None
+        self.loaded_config = None
         self.ready = False
 
     def normalize_plugin_config(self, config_data):
@@ -63,7 +64,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
             require(isinstance(data, Path) and data.is_absolute(), "INVALID_DATA_ROOT")
             source = Path(__file__).resolve().parents[2]
             require(data.resolve() != source and source not in data.resolve().parents, "SOURCE_DATA_FORBIDDEN")
-            self.lease = WriterLease(Path(cfg.plugin.writer_lock))
+            self.lease = WriterLease(Path(cfg.plugin.writer_lock) if cfg.plugin.writer_lock else data/"deployment-writer.lock")
             await owned_io(self.lease.acquire)
             data.mkdir(parents=True, exist_ok=True)
             self.data_lease = WriterLease(data/"writer.lock")
@@ -76,7 +77,11 @@ class MaiIdentityPlugin(MaiBotPlugin):
             def open_database():
                 self.db = Database(path, create=not path.exists())
             await owned_io(open_database)
+            self.loaded_config = cfg.model_copy(deep=True)
             self.active = cfg.model_copy(deep=True)
+            # Generated once under the SDK data lock, never inferred from a chat.
+            if not self.active.plugin.instance_id:
+                self.active.plugin.instance_id = await owned_io(self._instance_id)
             self.identity = IdentityService(self.db)
             self.policy = PolicyService(self.identity)
             self.relations = Relations(self.policy)
@@ -93,6 +98,17 @@ class MaiIdentityPlugin(MaiBotPlugin):
         except BaseException:
             await self.on_unload()
             raise
+
+    def _instance_id(self):
+        from ..shared.core import opaque
+        with self.db.transaction():
+            row = self.db.conn.execute("SELECT value FROM metadata WHERE key='deployment_instance_id'").fetchone()
+            if row is None:
+                value = "maiidentity-" + uuid.uuid4().hex
+                self.db.conn.execute("INSERT INTO metadata VALUES('deployment_instance_id',?)", (value,))
+            else:
+                value = row[0]
+            return opaque(value)
 
     def _context_ownership_key(self):
         # Persistent block ownership is NOT an identity/authorization key. It
@@ -167,6 +183,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
                 if self.data_lease:
                     self.data_lease.release()
                     self.data_lease = None
+                self.loaded_config = None
                 if self.lease:
                     self.lease.release()
                 self.db = self.lease = self.active = self.identity = self.policy = self.relations = None
@@ -181,7 +198,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
         except BaseException:
             await self.on_unload()
             raise
-        if self.active is not None and new != self.active:
+        if self.active is not None and new != self.loaded_config:
             await self.on_unload()
             raise RuntimeError("RELOAD_REQUIRED")
 

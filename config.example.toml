@@ -1,14 +1,17 @@
 # Fresh installation, no accounts or privileges. Stop old Owner Auth first.
 [plugin]
-enabled = false
+enabled = true
 config_version = "3"
 acknowledgement = ""
+# Empty instance ID is generated once and persisted in the granted data directory.
 instance_id = ""
+# Optional absolute deployment lock override; no path needed for normal installs.
 writer_lock = ""
 migration_id = ""
 
 [identity]
-adapter_namespace = ""
+adapter_namespace = "host-qq"
+# Empty matches Host scope=None exactly (Snowluma default), never a wildcard.
 route_scope = ""
 accounts = []
 

@@ -6,29 +6,35 @@ MaiIdentity 3.0.0 修复构建接受两组精确配对：原 Windows / Python 3.
 
 根 plugin.py 是唯一入口；复制安装包内容到一个插件目录。保留 LICENSE。配置仍位于该目录的 config.toml；SDK 数据根按新 ID 分配为实例目录下 `data/plugins/davidblackcn.maibot-maiidentity-plugin/`，不能沿用旧 ID 猜测路径。源码导入不会创建数据库。全新默认配置禁用、无账号、无管理员。已有旧格式会明确校验失败，不自动清空。
 
-全新隔离实例的合成配置示例：
+全新安装不需要填写部署字段。Host 自动生成默认配置，直接启动后发送 `/maiidentity_status`：
 
 ```toml
 [plugin]
 enabled = true
 config_version = "3"
-acknowledgement = "local-operator-reviewed"
-instance_id = "synthetic-instance"
-writer_lock = "D:/MaiBot-test/locks/maiidentity.lock"
+instance_id = ""
+writer_lock = ""
 migration_id = ""
 
 [identity]
-adapter_namespace = "synthetic-qq-adapter"
-route_scope = "default"
+adapter_namespace = "host-qq"
+route_scope = ""
+accounts = []
+```
 
+空 instance_id 在 SDK 数据目录首次启动时生成并持久保存；空 writer_lock 使用该目录中的部署锁和数据库锁，防止重复写入者。旧 acknowledgement 字段保留兼容，但不再要求确认字符串。已有显式 instance_id 和命名空间可以保留，尤其不要改变已配置角色的身份命名空间。
+
+空 route_scope 精确匹配 Host 消息的 scope=None（已观察到的 Snowluma 默认路由），不是通配符。使用非空 scope 的部署可填写实际 scope，跨 scope 仍被拒绝。adapter_namespace 默认为稳定的本地 host-qq 名称，不声称证明远端适配器身份。消息必须匹配 Host bot.qq_account、qq 平台，且不能是机器人自身消息。accounts 为空可正常加载和提供上下文，不会自动赋予管理员身份。
+
+可选：若要配置明确账号和本地角色，使用相同 instance_id/adapter_namespace。例如下面全部是合成值，应替换为你自己明确配置的标识：
+
+```toml
 [[identity.accounts]]
 platform = "qq"
 adapter_namespace = "synthetic-qq-adapter"
 account_id = "10001"
 enabled = true
 ```
-
-`adapter_namespace` 是本机操作者为受信适配器指定的稳定命名空间；`route_scope` 必须与该适配器经过 Host 路由的真实 scope 精确一致。消息还必须具有与 Host 配置 `bot.qq_account` 相同的 `account_id`；字段缺失、跨路由或自机器人消息不产生主体投影。当前没有多机器人账号公共身份枚举适配；主账号未知时仅保留一般规则。上下文只说明消息作者，不能证明当前 API 调用者或真实人类身份。
 
 管理员必须单独、显式配置。以下片段追加到上述合成配置，只给明确 context 资源内的实例管理角色，不给 MaiVita 能力：
 
@@ -43,4 +49,4 @@ scope = { kind = "instance", instance_id = "synthetic-instance", character_id = 
 
 迁移数据的配置与 activation.json 绑定；不要在线直接修改已激活迁移配置，修改后会因摘要不匹配拒绝启动。当前工具只支持首次离线激活，后续成对配置更新需要独立运维流程；不要删除 migration_id 或标记绕过校验。
 
-writer_lock 必须是所有新实例共用的绝对路径，不能按进程各建一份。另有 SDK 数据根内的 writer.lock 防止同一数据根因误配部署锁而出现两个写者，两把锁均在失败/卸载时释放。运行数据只使用 SDK 授予的数据根；不要放入源码目录。`/owner_auth_status` 与 `/maiidentity_status` 仅显示公开就绪状态，走普通 send.text，没有静默豁免、账号名单或全局最近操作。
+writer_lock 可留空自动使用 SDK 数据目录；显式覆盖时必须是同一部署共用的绝对路径，不能按进程各建一份。另有 SDK 数据根内的 writer.lock 防止同一数据根因误配部署锁而出现两个写者，两把锁均在失败/卸载时释放。运行数据只使用 SDK 授予的数据根；不要放入源码目录。`/owner_auth_status` 与 `/maiidentity_status` 仅显示公开就绪状态，走普通 send.text，没有静默豁免、账号名单或全局最近操作。

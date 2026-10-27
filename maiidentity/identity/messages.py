@@ -32,7 +32,7 @@ def host_message(raw: dict, *, instance: str, namespace: str, bot_account: str, 
     require(type(info) is dict and type(info.get("user_info")) is dict, "IDENTITY_UNRESOLVED")
     user = info["user_info"]
     require(raw.get("platform") == "qq", "UNSUPPORTED")
-    require(raw.get("account_id") == bot_account and raw.get("scope") == opaque(route_scope), "SCOPE_MISMATCH")
+    require(raw.get("account_id") == bot_account and raw.get("scope") == (opaque(route_scope) if route_scope else None), "SCOPE_MISMATCH")
     require(raw.get("is_bot", False) is False and raw.get("is_system", False) is False
             and raw.get("is_mai_message", False) is False and raw.get("is_notify", False) is False, "IDENTITY_UNRESOLVED")
     account = AccountKey("qq", namespace, user.get("user_id"))

@@ -102,7 +102,7 @@ async def test_empty_disabled_no_io_storage_failure_load_cleanup(tmp_path):
     from maiidentity.host.plugin import MaiIdentityPlugin
     from .test_migration_lifecycle import context, enabled_config
     plugin = MaiIdentityPlugin()
-    plugin._set_context(context(tmp_path)[0]); plugin.set_plugin_config({})
+    plugin._set_context(context(tmp_path)[0]); plugin.set_plugin_config({'plugin': {'enabled': False, 'config_version': '3'}})
     await plugin.on_load()
     assert not (tmp_path/"data").exists() and not plugin.ready
     assert await plugin.replyer(extra_prompt="x") is None

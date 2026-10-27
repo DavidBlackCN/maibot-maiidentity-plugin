@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 from maibot_sdk import PluginConfigBase
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from ..shared.core import AccountKey, Scope
 
@@ -12,7 +12,7 @@ class Section(PluginConfigBase):
 
 
 class PluginSection(Section):
-    enabled: bool = False
+    enabled: bool = True
     config_version: Literal["3"] = "3"
     acknowledgement: str = ""
     instance_id: str = ""
@@ -33,9 +33,15 @@ class AccountEntry(Section):
 
 
 class IdentitySection(Section):
-    adapter_namespace: str = ""
+    adapter_namespace: str = "host-qq"
     route_scope: str = ""
     accounts: list[AccountEntry] = Field(default_factory=list)
+
+    @field_validator("adapter_namespace")
+    @classmethod
+    def default_namespace(cls, value):
+        return value or "host-qq"
+
 
 
 class RoleEntry(Section):
@@ -90,11 +96,15 @@ class MaiIdentityConfig(Section):
         if self.plugin.enabled:
             from pathlib import Path
             from ..shared.core import opaque
-            if self.plugin.acknowledgement != "local-operator-reviewed" or not Path(self.plugin.writer_lock).is_absolute():
-                raise ValueError("enabled plugin requires explicit local review and absolute deployment writer_lock")
-            opaque(self.plugin.instance_id)
+            if self.plugin.writer_lock and not Path(self.plugin.writer_lock).is_absolute():
+                raise ValueError("plugin.writer_lock must be absolute when specified")
+            if self.plugin.instance_id:
+                opaque(self.plugin.instance_id)
             opaque(self.identity.adapter_namespace)
-            opaque(self.identity.route_scope)
+            if self.identity.route_scope:
+                opaque(self.identity.route_scope)
+            if self.roles.entries and not self.plugin.instance_id:
+                raise ValueError("explicit roles require plugin.instance_id matching their scope")
             for entry in self.identity.accounts:
                 if entry.adapter_namespace != self.identity.adapter_namespace:
                     raise ValueError("account namespace differs from audited adapter namespace")
