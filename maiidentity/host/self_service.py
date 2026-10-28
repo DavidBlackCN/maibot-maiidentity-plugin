@@ -1,4 +1,4 @@
-"""Participant-only commands behind Host command-context verification.
+"""Participant-only commands behind the official Host Command entry.
 
 No roles, grants, account merges, owner labels or Hush/Vita privileges can be
 created here. A revoked identity requires local operator review to restore.
@@ -28,7 +28,7 @@ def apply(plugin, command):
                     subject=uuid.uuid4().hex
                     db.conn.execute("INSERT INTO subjects VALUES(?,'active',1)",(subject,))
                     db.conn.execute("INSERT INTO bindings VALUES(?,?,'active',1,'host_self')",(evidence.account.key,subject))
-                    db.audit('binding.self_registered',subject,{'method':'host_command_context_v1'})
+                    db.audit('binding.self_registered',subject,{'method':'official_host_command'})
                 return '当前账号已登记；没有授予管理员或跨插件权限。'
             return db.once(key,['self_register',evidence.account.key],register)
         actor=plugin.policy.actor(evidence.account)

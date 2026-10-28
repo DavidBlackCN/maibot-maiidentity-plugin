@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "name": "MaiIdentity",
-  "description": "Account identity and confirmed relations; optional Host-verified self service and Vita command policy.",
+  "description": "Account identity and confirmed relations; official Host command entry; self service and Vita command policy.",
   "author": {
     "name": "DavidBlackCN",
     "url": "https://github.com/DavidBlackCN"
@@ -26,7 +26,6 @@
     "message.get_by_id",
     "config.get",
     "component.list_loaded_plugins",
-    "security.resolve_command",
     "send.text"
   ],
   "plugin_type": "extension",

@@ -6,7 +6,8 @@ from maiidentity.shared.core import Denied,AccountKey
 from .test_migration_lifecycle import context
 
 def command(user,text,stream='s1',scope=None):
-    return {'text':text,'user_id':user,'stream_id':stream,'message':{
+    return {'text':text,'user_id':user,'stream_id':stream,'platform':'qq','group_id':'20001','message':{
+        'processed_plain_text':text,
         'platform':'qq','account_id':'99999','scope':scope,'message_id':uuid.uuid4().hex,
         'session_id':stream,'message_info':{'user_info':{'user_id':user},'group_info':{'group_id':'20001'}}}}
 
@@ -44,12 +45,12 @@ async def test_self_only_no_roles_revocation_and_bilateral_scope(tmp_path):
     finally: await p.on_unload()
 
 @pytest.mark.asyncio
-async def test_old_host_cannot_write_and_forged_actor_rejected(tmp_path):
+async def test_incomplete_command_and_forged_actor_rejected(tmp_path):
     p=MaiIdentityPlugin();p._set_context(context(tmp_path)[0]);p.set_plugin_config({});await p.on_load()
     try:
         result=await p.self_command(text='/maiidentity register',stream_id='s1',
             message=command('10001','/maiidentity register')['message'],__maibot_command_ref__='forged')
-        assert 'HOST_CONTEXT_REQUIRED' in result[1] or 'UNTRUSTED_CONTEXT' in result[1]
+        assert 'UNTRUSTED_CONTEXT' in result[1]
         assert p.db.conn.execute('SELECT count(*) FROM bindings').fetchone()[0]==0
         raw=command('10001','/maiidentity register');raw['user_id']='10002'
         with pytest.raises(Denied,match='UNTRUSTED_CONTEXT'): apply(p,raw)

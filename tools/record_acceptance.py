@@ -17,7 +17,7 @@ if __name__ == "__main__":
     assert all(report["passed"] is True for report in reports.values())
     assert all(reports[name]["candidate_files"] == candidate for name in ("unit", "runner", "host"))
     lock = json.loads((ROOT/"tests/fixtures/source-lock.json").read_text(encoding="utf-8"))
-    report = {"date": datetime.now(timezone(timedelta(hours=8))).date().isoformat(), "timezone": "Asia/Shanghai", "plugin_version": "3.1.0", "config_version": "3",
+    report = {"date": datetime.now(timezone(timedelta(hours=8))).date().isoformat(), "timezone": "Asia/Shanghai", "plugin_version": "3.1.1", "config_version": "3",
               "db_schema": 1, "api_major": "1", "production_approved": False, "host_commit": lock["host_commit"],
               "sdk_version": "2.15.0", "maivita_reference_commit": lock["maivita_commit"],
               "maivita_reference_scope": "historical contract reference only; not a joint runtime acceptance", "candidate_files": candidate,
@@ -26,7 +26,7 @@ if __name__ == "__main__":
               "T2": {k: reports["host"][k] for k in ("cases", "scope", "full_bot_cli", "module_replacements", "command", "passed")},
               "migration_cli": reports["migration-cli"], "platform_sends": 0, "model_requests": 0,
               "cross_plugin_privileges": "disabled", "H01": "unsupported", "H02": "unsupported", "H03": "disabled",
-              "optional_command_adapter":"requires separately verified Host command-context extension; not tested by this baseline gate",
+              "local_command_adapter":"official Host command entry; full joint cases recorded separately",
               "not_executed": ["full_bot_cli_WebUI", "real_platform", "paid_model", "trusted_H03_atomic_consume", "MaiVita_policy_joint_acceptance", "long_term_observation"],
               "validation_files": {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for directory in ("tools", "tests", "integration_tests") for p in (ROOT/directory).rglob("*.py")}}

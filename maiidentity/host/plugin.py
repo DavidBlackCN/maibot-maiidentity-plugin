@@ -283,16 +283,21 @@ class MaiIdentityPlugin(MaiBotPlugin):
 
     @API('authorize_vita_command',public=True,version='1')
     async def authorize_vita_command(self,**kwargs):
-        from .trusted import FIELD,resolve_command
-        from .vita_management import authorize
-        from ..shared.core import Denied
+        # Retired patch interface: opaque references never grant access.
+        return {'allowed':False,'reason':'LOCAL_COMMAND_REQUIRED'}
+
+    @API('get_vita_policy',public=True,version='1')
+    async def get_vita_policy(self,**kwargs):
+        from .vita_management import evaluate
+        active=self.active
         try:
-            command=await resolve_command(self,kwargs.get(FIELD),caller='davidblackcn.maibot-maivita-plugin',name='maivita')
-            return await owned_io(authorize,self,command)
-        except Denied as exc:
-            return {'allowed':False,'reason':exc.code}
+            fields={'account_id','bot_account_id','route_scope','stream_id','action'}
+            require(set(kwargs)==fields,'INVALID_ARGUMENT')
+            result=await owned_io(evaluate,self,**kwargs)
+            require(self.ready and self.active is active,'NOT_READY')
+            return result
         except Exception:
-            return {'allowed':False,'reason':'UNAVAILABLE'}
+            return {'policy_version':1,'allowed':False}
 
     @API("get_confirmed_relations", public=True, version="1")
     async def get_confirmed_relations(self, **kwargs):
@@ -310,28 +315,27 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def status(self, stream_id="", **kwargs):
         if not stream_id:
             return True, "MaiIdentity status: no target stream", 1
-        text = "MaiIdentity 3.1.0；"+("已就绪" if self.ready else "未启用")+"；命令管理需 Host 可信上下文及本地授权；关系不是执行许可。"
+        text = "MaiIdentity 3.1.1；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
         try:
             sent = await self.ctx.send.text(text, stream_id)
             return True, "public status sent" if sent is True else "normal send denied", 1
         except Exception:
             return True, "normal send unavailable", 1
 
-    @Command('maiidentity_manage',pattern=r'^/maiidentity(?:\s|$)',description='身份状态及可信 Host 下的本人登记、双方关系确认')
+    @Command('maiidentity_manage',pattern=r'^/maiidentity(?:\s|$)',description='身份状态、本人登记及双方关系确认')
     async def self_command(self,text='',stream_id='',**kwargs):
         if text.strip() in ('/maiidentity','/maiidentity status'):
             return await self.status(stream_id=stream_id)
-        from .trusted import FIELD,IDENTITY,resolve_command
+        from .local_command import validate
         from .self_service import apply
         from ..shared.core import Denied
         target=''
         try:
-            command=await resolve_command(self,kwargs.get(FIELD),caller=IDENTITY,name='maiidentity_manage')
+            command=validate(self,{**kwargs,'text':text,'stream_id':stream_id})
             target=command.get('stream_id','')
             message=await owned_io(apply,self,command)
         except Denied as exc:
-            # No trusted stream on old Host: return a diagnostic, never use a
-            # forged API/command argument to choose a private receipt target.
+            # Malformed envelopes never choose a receipt target.
             message='MaiIdentity 未执行：'+exc.code
             if not target: return True,message,2
         except Exception:

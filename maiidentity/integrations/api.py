@@ -23,12 +23,13 @@ def descriptor(ready=False):
         "alias_transport": "disabled_no_complete_attested_history", "planner_actor": "disabled",
         "planner_typed_items": "skipped", "local_projection": "unsupported", "guard_mode": "context_only",
         "cross_plugin_privileged_enabled": False, "H01": "unsupported", "H02": "unsupported",
-        "optional_command_adapter": {"host_capability":"security.resolve_command","version":1,
-            "commands":["self_registration","bilateral_public_relation","maivita.wake","maivita.replan"],
-            "vita_policy":"explicit_local_grant_with_deny_precedence","official_host_support":False,
+        "local_command_adapter": {"host_patch_required":False,
+            "commands":["self_registration","bilateral_public_relation"],
+            "vita_policy":"read_only_boolean_not_actor_proof_or_execution_token",
+            "vita_execution":"Vita_own_official_Command_entry_only",
             "general_remote_privileges":False},
         "H03": "disabled_no_trusted_caller_actor_context", "atomic_remote_consume": "unsupported",
-        "maivita_contract": "1.0.0", "policy_transport": "disabled", "authorization_from_payload": False})
+        "maivita_contract": "1.0.0", "policy_transport": "read_only_vita_rules_no_delegation", "authorization_from_payload": False})
 
 
 class PublicAPI:

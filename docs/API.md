@@ -1,4 +1,4 @@
-> 当前联动版本 3.1.0（2026-10-28）：默认安装与可选可信命令以[本版说明](JOINT_RELEASE.md)为准。下文原有通用特权 API 限制仍适用；可选有限命令需要独立 Host 扩展。
+> 当前版本 3.1.1：官方 Host 命令入口及只读策略，无需私有补丁。使用与边界见[本版说明](JOINT_RELEASE.md)，下文通用特权 API 限制仍适用。
 
 # 公共 API major 1
 
@@ -8,6 +8,8 @@
 |---|---|
 | get_contract | 匿名公开：插件、配置、DB、API 版本及实际启用边界，不含账号 |
 | resolve_identity / get_identity | UNTRUSTED_CONTEXT |
+| get_vita_policy | 只读布尔规则查询，不证明调用者身份，不签发执行凭据；字段见 JOINT_RELEASE |
+| authorize_vita_command | 已停用，始终 LOCAL_COMMAND_REQUIRED |
 | authorize | UNTRUSTED_CONTEXT，不签发 proof 或执行许可 |
 | get_confirmed_relations | UNTRUSTED_CONTEXT，不泄露私密关系存在性 |
 | build_context / get_diagnostics | UNTRUSTED_CONTEXT，不接受参数构造 actor |
@@ -15,9 +17,9 @@
 
 普通响应包含 api_version=1、ok（严格布尔）、data、error、request_id、as_of（UTC 带时区）。尚无可信请求 ID 传输时 request_id=null。错误是稳定 code 和 retryable=false，不回显输入或凭证。调用传入的 is_owner、verified、issuer、caller_plugin_id、user_id、context_ref、proof_ref 都不能认证；真实历史消息也不能证明调用者。
 
-本地领域服务提供账号唯一绑定/撤销、双端挑战、RBAC、角色继承、deny、Scope、委托预留/回执/对账和关系确认。它们是受信进程内领域接口，不是网络 API；不得把任意客户端 JSON 转成 Actor 或直接调用 operator 方法。当前没有模型可写 Tool、聊天绑定命令或远程管理端点。跨进程原子核验和执行尚未实现。
+本地领域服务提供账号唯一绑定/撤销、双端挑战、RBAC、角色继承、deny、Scope、委托预留/回执/对账和关系确认。它们是受信进程内领域接口，不是网络 API；不得把任意客户端 JSON 转成 Actor 或直接调用 operator 方法。当前没有模型可写 Tool 或远程管理端点；本人登记与公开关系仅通过自己的官方 Command 入口，不能经 API 调用。跨进程原子核验和执行尚未实现。
 
-角色、业务 Capability、Scope 与 manifest 的四项 SDK capability 分别维护。operator_admin 没有 maivita.wake/private.read/configure 等默认权限。关系称谓、动态好感度和模型上下文均不发放能力。可用授予先取并集，再限制到请求/资源/Scope；匹配 deny 优先。缺字段、未知能力和过期均拒绝。
+角色、业务 Capability、Scope 与 manifest 的 SDK capability 分别维护。operator_admin 没有 maivita.wake/private.read/configure 等默认权限。关系称谓、动态好感度和模型上下文均不发放能力。可用授予先取并集，再限制到请求/资源/Scope；匹配 deny 优先。缺字段、未知能力和过期均拒绝。
 
 委托需要显式目的、精确能力/资源/范围/参数、时限、次数和预算；首版不转委托。任务只保存 grant_ref；预留时重新读取绑定 epoch、授权/策略 revision，并在同一 SQLite 事务消费次数。预留响应明确 `reservation_only=true, external_execution_authorized=false`，不能当外部执行令牌。未知结果不返还次数、不换新键重发；需可信执行者对账后才可继续。首版不提供外部执行器或调度器。
 
