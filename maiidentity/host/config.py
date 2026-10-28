@@ -83,7 +83,7 @@ class CompatibilitySection(Section):
 
 
 class ManagementSection(Section):
-    # Local operator configuration. Empty means nobody may wake/replan Vita.
+    # Local operator configuration for finite Vita life commands. Empty denies all.
     vita_admin_accounts: list[str] = Field(default_factory=list,max_length=16)
 
     @field_validator('vita_admin_accounts')

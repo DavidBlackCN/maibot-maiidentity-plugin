@@ -15,7 +15,11 @@ def apply(plugin, command):
     require(type(text) is str and len(text)<=256,'INVALID_ARGUMENT')
     words=text.strip().split()
     require(len(words)>=2 and words[0]=='/maiidentity','INVALID_ARGUMENT')
-    key='host-self:'+digest([evidence.account.key,evidence.stream_id,evidence.message_id])
+    aliases={'登记我':'register','查看关系':'relations','确认关系':'relation confirm','撤销关系':'relation revoke','建立关系':'relation propose'}
+    if words[1] in aliases:words=[words[0],*aliases[words[1]].split(),*words[2:]]
+    if len(words)==5 and words[1:3]==['relation','propose']:
+        words[4]={'朋友':'friend','家人':'family','伴侣':'partner'}.get(words[4],words[4])
+    key='host-self:' +digest([evidence.account.key,evidence.stream_id,evidence.message_id])
     db=plugin.db
     # Keep revisions stable across reads; domain methods own transactions.
     with db.guard:

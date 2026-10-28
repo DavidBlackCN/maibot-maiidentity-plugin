@@ -87,6 +87,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
             self.relations = Relations(self.policy)
             self.challenges = BindingChallenges(self.identity)
             await owned_io(self._bootstrap)
+            await owned_io(self._bootstrap_life_management)
             self.resolver = MessageResolver(ttl=cfg.context.cache_ttl_seconds)
             ownership_key = await owned_io(self._context_ownership_key)
             self.projector = Projector(cfg.context.budget_bytes, ownership_key=ownership_key)
@@ -176,7 +177,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
             for account in cfg.management.vita_admin_accounts:
                 binding=self.identity.lookup(AccountKey('qq',cfg.identity.adapter_namespace,account))
                 scope=Scope('instance',cfg.plugin.instance_id,'default','qq',cfg.identity.adapter_namespace,'life','default')
-                for capability in ('maivita.wake','maivita.replan'):
+                for capability in ('maivita.wake','maivita.replan','maivita.life.manage'):
                     ref=uuid.uuid4().hex
                     self.db.put('grant',ref,{'id':ref,'subject':binding['subject'],'capability':capability,
                         'scope':scope.data(),'effect':'allow','delegable':False,'expires':None,'status':'active',
@@ -184,6 +185,24 @@ class MaiIdentityPlugin(MaiBotPlugin):
                 self.policy._bump(binding['subject'])
             self.db.put("bootstrap", "current", {"hash": config_hash}, old["revision"] if old else None)
             self.db.audit("bootstrap.reviewed", "current", {"revision": old["revision"]+1 if old else 1})
+
+    def _bootstrap_life_management(self):
+        # Add a precise product capability once. Never reactivate revoked
+        # accounts or an explicitly revoked grant on an ordinary upgrade.
+        cfg=self.active
+        with self.db.transaction():
+            for account in cfg.management.vita_admin_accounts:
+                binding=self.identity.lookup(AccountKey('qq',cfg.identity.adapter_namespace,account))
+                if binding is None:continue
+                if any(g.get('management_config_origin') and g['subject']==binding['subject']
+                       and g['capability']=='maivita.life.manage' for g in self.db.records('grant')):continue
+                scope=Scope('instance',cfg.plugin.instance_id,'default','qq',cfg.identity.adapter_namespace,'life','default')
+                ref=uuid.uuid4().hex
+                self.db.put('grant',ref,{'id':ref,'subject':binding['subject'],'capability':'maivita.life.manage',
+                    'scope':scope.data(),'effect':'allow','delegable':False,'expires':None,'status':'active',
+                    'source':'operator_config','management_config_origin':True})
+                self.policy._bump(binding['subject'])
+                self.db.audit('management.product_capability',ref,{'capability':'maivita.life.manage'})
 
     async def on_unload(self):
         self.ready = False
@@ -253,7 +272,12 @@ class MaiIdentityPlugin(MaiBotPlugin):
                         scope = Scope("stream", self.active.plugin.instance_id, "default", "qq",
                                       self.active.identity.adapter_namespace, "context", "default", evidence.stream_id)
                         visible = await asyncio.to_thread(self.relations.visible, binding["subject"], scope)
-            return self.projector.inject(kwargs, snapshot(evidence, binding, visible, stage=stage))
+            facts=snapshot(evidence,binding,visible,stage=stage)
+            if stage=='planner' and 'extra_prompt' not in kwargs:
+                from .typed_prompt import inject
+                result=inject(self,kwargs,facts,'MaiIdentity')
+                return result if result['action']=='modify' else None
+            return self.projector.inject(kwargs,facts)
         except Exception:
             return None  # Ordinary chat continues; raw prompt is never logged.
 
@@ -299,6 +323,18 @@ class MaiIdentityPlugin(MaiBotPlugin):
         except Exception:
             return {'policy_version':1,'allowed':False}
 
+    @API('get_public_social_context',public=True,version='1')
+    async def get_public_social_context(self,**kwargs):
+        from .social_context import public_context
+        from ..integrations.api import envelope
+        active=self.active
+        try:
+            require(set(kwargs)=={'stream_id','bot_account_id','route_scope'},'INVALID_ARGUMENT')
+            data=await owned_io(public_context,self,**kwargs)
+            require(self.ready and self.active is active,'NOT_READY')
+            return envelope(data=data)
+        except Exception:return envelope(code='CONTEXT_UNAVAILABLE')
+
     @API("get_confirmed_relations", public=True, version="1")
     async def get_confirmed_relations(self, **kwargs):
         return PublicAPI().call("get_confirmed_relations", **kwargs)
@@ -315,7 +351,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def status(self, stream_id="", **kwargs):
         if not stream_id:
             return True, "MaiIdentity status: no target stream", 1
-        text = "MaiIdentity 3.1.1；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
+        text = "MaiIdentity 3.2.0；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
         try:
             sent = await self.ctx.send.text(text, stream_id)
             return True, "public status sent" if sent is True else "normal send denied", 1
@@ -326,6 +362,15 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def self_command(self,text='',stream_id='',**kwargs):
         if text.strip() in ('/maiidentity','/maiidentity status'):
             return await self.status(stream_id=stream_id)
+        if text.strip() in ('/maiidentity help','/maiidentity 帮助'):
+            if not stream_id:return True,'no target stream',2
+            help_text=('MaiIdentity：\n/maiidentity 登记我\n/maiidentity 查看关系\n'
+                '/maiidentity 建立关系 对方QQ 朋友（也支持家人、伴侣）\n'
+                '/maiidentity 确认关系 关系ID（由对方确认）\n/maiidentity 撤销关系 关系ID\n'
+                '仅当前群公开关系；不授予任何管理权。Vita 管理账号由本地 vita_admin_accounts 配置。')
+            try:await self.ctx.send.text(help_text,stream_id)
+            except Exception:pass
+            return True,'help through normal permissions',2
         from .local_command import validate
         from .self_service import apply
         from ..shared.core import Denied

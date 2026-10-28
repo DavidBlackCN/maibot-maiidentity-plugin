@@ -15,11 +15,11 @@ ROLES = {
                                   "identity.delegation.manage", "relation.confirm.manage"},
     "service_agent": set(),
 }
-MAIVITA = {"maivita.private.read", "maivita.wake", "maivita.sleep.interrupt", "maivita.replan", "maivita.configure"}
+MAIVITA = {"maivita.private.read", "maivita.wake", "maivita.sleep.interrupt", "maivita.replan", "maivita.configure", "maivita.life.manage"}
 MAIHUSH = {"maihush.mute", "maihush.renew", "maihush.unmute", "maihush.configure"}
 # Operator-owned catalogue: declaration grants no role or permission.
 CAPABILITIES = set().union(*ROLES.values()) | MAIVITA | MAIHUSH
-NONDELEGABLE = {"identity.role.manage", "identity.binding.manage", "identity.delegation.manage", "relation.confirm.manage", "maivita.configure"} | MAIHUSH
+NONDELEGABLE = {"identity.role.manage", "identity.binding.manage", "identity.delegation.manage", "relation.confirm.manage", "maivita.configure", "maivita.life.manage"} | MAIHUSH
 
 
 def expand_roles(definitions: dict, role: str, visiting=None) -> set:

@@ -8,13 +8,15 @@ from ..shared.core import AccountKey, Scope, opaque, require
 
 def evaluate(plugin, *, account_id, bot_account_id, route_scope, stream_id, action):
     require(plugin.ready and plugin.active is not None, 'NOT_READY')
-    require(action in ('wake', 'enqueue_replan'), 'UNSUPPORTED_COMMAND')
+    capabilities={'wake':'maivita.wake','enqueue_replan':'maivita.replan',
+        **{kind:'maivita.life.manage' for kind in ('start_sleep','start_activity','end_activity','apply_plan_patch','manage_goal')}}
+    require(action in capabilities, 'UNSUPPORTED_COMMAND')
     require(bool(plugin.bot_account) and bot_account_id == plugin.bot_account
         and route_scope == (plugin.active.identity.route_scope or None), 'SCOPE_MISMATCH')
     account = AccountKey('qq', plugin.active.identity.adapter_namespace, account_id)
     require(account.account_id != bot_account_id, 'PERMISSION_DENIED')
     opaque(stream_id)
-    capability = 'maivita.wake' if action == 'wake' else 'maivita.replan'
+    capability = capabilities[action]
     with plugin.db.guard:
         actor = plugin.policy.actor(account)
         scope = Scope('stream', plugin.active.plugin.instance_id, 'default', 'qq',

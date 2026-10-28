@@ -16,7 +16,7 @@ route_scope = ""
 accounts = []
 
 # Optional Vita administrators; official Host commands, no Host patch required.
-# Local QQ allowlist grants only Vita wake/replan; empty grants nobody.
+# Local QQ allowlist grants finite Vita life commands (wake/replan/activity/plan/goal/sleep); empty grants nobody.
 [management]
 vita_admin_accounts = []
 
