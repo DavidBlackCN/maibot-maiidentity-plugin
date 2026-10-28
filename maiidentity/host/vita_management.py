@@ -3,7 +3,7 @@
 Installed plugins can ask this boolean question. No identity/role list, command
 proof or transferable key is returned. Vita obtains the actual actor locally.
 """
-from ..shared.core import AccountKey, Scope, opaque, require
+from ..shared.core import AccountKey, Scope, opaque, require, qq
 
 
 def evaluate(plugin, *, account_id, bot_account_id, route_scope, stream_id, action):
@@ -11,8 +11,9 @@ def evaluate(plugin, *, account_id, bot_account_id, route_scope, stream_id, acti
     capabilities={'wake':'maivita.wake','enqueue_replan':'maivita.replan',
         **{kind:'maivita.life.manage' for kind in ('start_sleep','start_activity','end_activity','apply_plan_patch','manage_goal')}}
     require(action in capabilities, 'UNSUPPORTED_COMMAND')
-    require(bool(plugin.bot_account) and bot_account_id == plugin.bot_account
-        and route_scope == (plugin.active.identity.route_scope or None), 'SCOPE_MISMATCH')
+    # The API adapter has verified this bot/stream pair against Host routes.
+    qq(bot_account_id)
+    require(route_scope == (plugin.active.identity.route_scope or None), 'SCOPE_MISMATCH')
     account = AccountKey('qq', plugin.active.identity.adapter_namespace, account_id)
     require(account.account_id != bot_account_id, 'PERMISSION_DENIED')
     opaque(stream_id)

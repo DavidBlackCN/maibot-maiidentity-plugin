@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "name": "MaiIdentity",
   "description": "Account identity and confirmed relations; official Host command entry; self service and Vita command policy.",
   "author": {
@@ -24,7 +24,7 @@
   "dependencies": [],
   "capabilities": [
     "message.get_by_id",
-    "config.get",
+    "chat.get_all_streams",
     "component.list_loaded_plugins",
     "send.text"
   ],

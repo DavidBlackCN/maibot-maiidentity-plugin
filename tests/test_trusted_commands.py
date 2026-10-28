@@ -35,7 +35,9 @@ async def test_inconsistent_envelope_rejected_before_write(tmp_path):
         for key,value in [('is_bot',True),('is_system',True),('is_mai_message',True),
                           ('is_notify',True),('account_id','88888'),('scope','wrong'),('message_id','')]:
             bad=deepcopy(c);bad['message'][key]=value
-            with pytest.raises(Denied): validate(p,bad)
+            # Route account mismatches are rejected by the async Host lookup.
+            if key != 'account_id':
+                with pytest.raises(Denied): validate(p,bad)
             await p.self_command(**bad)
         assert p.db.conn.execute('SELECT count(*) FROM bindings').fetchone()[0]==0
         p.ready=False

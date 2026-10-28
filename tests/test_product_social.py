@@ -17,7 +17,7 @@ async def test_public_social_projection_private_filter_scope_and_revocation(tmp_
         apply(p,command('10002','/maiidentity 确认关系 '+ref))
         data=(await p.get_public_social_context(**query))['data'];assert data['counts']['friend']==1
         assert '10001' not in json.dumps(data) and ref not in json.dumps(data)
-        assert (await p.get_public_social_context(**{**query,'stream_id':'s2'}))['data']['counts']['friend']==0
+        assert not (await p.get_public_social_context(**{**query,'stream_id':'s2'}))['ok']
         assert not (await p.get_public_social_context(**{**query,'route_scope':'wrong'}))['ok']
         with p.db.transaction():
             row=p.db.get('relation',ref);row['visibility']='participants';p.db.put('relation',ref,row,row['revision'])

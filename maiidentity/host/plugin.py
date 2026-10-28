@@ -43,7 +43,6 @@ class MaiIdentityPlugin(MaiBotPlugin):
         super().__init__()
         self.db = self.lease = self.active = self.identity = self.policy = self.relations = None
         self.resolver = self.projector = self.challenges = None
-        self.bot_account = ""
         self.data_lease = None
         self.loaded_config = None
         self.ready = False
@@ -96,10 +95,6 @@ class MaiIdentityPlugin(MaiBotPlugin):
             self.resolver = MessageResolver(ttl=cfg.context.cache_ttl_seconds)
             ownership_key = await owned_io(self._context_ownership_key)
             self.projector = Projector(cfg.context.budget_bytes, ownership_key=ownership_key)
-            try:
-                self.bot_account = qq(str(await self.ctx.config.get("bot.qq_account", "")))
-            except Exception:
-                self.bot_account = ""  # No self-bot evidence: author resolution disabled.
             self.ready = True
         except BaseException:
             await self.on_unload()
@@ -231,7 +226,6 @@ class MaiIdentityPlugin(MaiBotPlugin):
                     self.lease.release()
                 self.db = self.lease = self.active = self.identity = self.policy = self.relations = None
                 self.resolver = self.projector = self.challenges = None
-                self.bot_account = ""
 
     async def on_config_update(self, scope, config_data, version):
         if scope != "self":
@@ -246,8 +240,11 @@ class MaiIdentityPlugin(MaiBotPlugin):
             raise RuntimeError("RELOAD_REQUIRED")
 
     def _parse(self, raw):
+        # Only official Host receive/query/Command serializers reach here.
+        # The adapter's route account takes precedence over the global fallback.
+        bot = qq(raw.get('account_id')) if type(raw) is dict else ''
         return host_message(raw, instance=self.active.plugin.instance_id,
-                            namespace=self.active.identity.adapter_namespace, bot_account=self.bot_account,
+                            namespace=self.active.identity.adapter_namespace, bot_account=bot,
                             route_scope=self.active.identity.route_scope)
 
     @HookHandler("chat.receive.after_process", name="maiidentity_observe", mode=HookMode.BLOCKING,
@@ -281,7 +278,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
             if stage=='planner' and 'extra_prompt' not in kwargs:
                 from .typed_prompt import inject
                 result=inject(self,kwargs,facts,'MaiIdentity')
-                return result if result['action']=='modify' else None
+                return result if 'modified_kwargs' in result else None
             return self.projector.inject(kwargs,facts)
         except Exception:
             return None  # Ordinary chat continues; raw prompt is never logged.
@@ -322,6 +319,10 @@ class MaiIdentityPlugin(MaiBotPlugin):
         try:
             fields={'account_id','bot_account_id','route_scope','stream_id','action'}
             require(set(kwargs)==fields,'INVALID_ARGUMENT')
+            from .routes import resolve
+            route=await resolve(self.ctx,kwargs['stream_id'])
+            require(route['account_id']==kwargs['bot_account_id'] and route.get('scope')==kwargs['route_scope'],'SCOPE_MISMATCH')
+            require(self.ready and self.active is active,'NOT_READY')
             result=await owned_io(evaluate,self,**kwargs)
             require(self.ready and self.active is active,'NOT_READY')
             return result
@@ -335,6 +336,10 @@ class MaiIdentityPlugin(MaiBotPlugin):
         active=self.active
         try:
             require(set(kwargs)=={'stream_id','bot_account_id','route_scope'},'INVALID_ARGUMENT')
+            from .routes import resolve
+            route=await resolve(self.ctx,kwargs['stream_id'])
+            require(route['account_id']==kwargs['bot_account_id'] and route.get('scope')==kwargs['route_scope'],'SCOPE_MISMATCH')
+            require(self.ready and self.active is active,'NOT_READY')
             data=await owned_io(public_context,self,**kwargs)
             require(self.ready and self.active is active,'NOT_READY')
             return envelope(data=data)
@@ -356,7 +361,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def status(self, stream_id="", **kwargs):
         if not stream_id:
             return True, "MaiIdentity status: no target stream", 1
-        text = "MaiIdentity 3.2.1；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
+        text = "MaiIdentity 3.2.2；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
         try:
             sent = await self.ctx.send.text(text, stream_id)
             return True, "public status sent" if sent is True else "normal send denied", 1
@@ -379,19 +384,34 @@ class MaiIdentityPlugin(MaiBotPlugin):
         from .local_command import validate
         from .self_service import apply
         from ..shared.core import Denied
+        from .routes import command_route
         target=''
+        active=self.active
+        envelope={**kwargs,'text':text,'stream_id':stream_id}
         try:
-            command=validate(self,{**kwargs,'text':text,'stream_id':stream_id})
-            target=command.get('stream_id','')
+            route=await command_route(self.ctx,envelope)
+        except Exception:
+            return True,'MaiIdentity 未执行：ROUTE_UNRESOLVED；无法核对当前 Host 会话',2
+        try:
+            # A verified destination permits a generic receipt, not a mutation.
+            target=route['stream_id']
+            require(self.ready and self.active is active,'NOT_READY')
+            command=validate(self,envelope)
             message=await owned_io(apply,self,command)
         except Denied as exc:
-            # Malformed envelopes never choose a receipt target.
             message='MaiIdentity 未执行：'+exc.code
+            hints={'UNTRUSTED_CONTEXT':'命令消息身份字段不一致，请检查适配器消息。',
+                'IDENTITY_UNRESOLVED':'无法确认当前消息作者，未执行操作。',
+                'INVALID_ACCOUNT_ID':'请填写对方的数字 QQ 号，不要原样填写 BQQ。',
+                'INVALID_ID':'请填写实际返回的关系 ID，不要原样填写 REL。',
+                'NOT_READY':'插件正在重载或尚未就绪，请稍后重试。'}
+            if exc.code in hints:message+='；'+hints[exc.code]
             if not target: return True,message,2
         except Exception:
-            return True,'MaiIdentity storage unavailable; action not confirmed',2
+            message='MaiIdentity 未执行：服务暂不可用，操作未确认；请查看插件日志。'
+            if not target:return True,message,2
         try:
             sent=await self.ctx.send.text(message,target)
-            return True,'self command handled' if sent is True else 'normal send denied',2
+            return True,'self command handled' if sent is True else 'normal send denied: '+message,2
         except Exception:
             return True,'normal send unavailable',2

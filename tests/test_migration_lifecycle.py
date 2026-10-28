@@ -121,7 +121,11 @@ def context(tmp_path, old=False):
         if cap == "component.list_loaded_plugins":
             result = {"success": True, "plugins": ["com.khiqwq.owner-auth-plugin"] if old else []}
         elif cap == "config.get":
-            result = {"success": True, "value": "99999"}
+            result = {"success": True, "value": ""}
+        elif cap == "chat.get_all_streams":
+            result = {"success": True, "streams": [{"session_id":"s1", "stream_id":"s1",
+                "platform":"qq", "account_id":"99999", "scope":None,
+                "is_group_session":True, "group_id":"20001"}]}
         elif cap == "message.get_by_id":
             result = {"success": True, "message": None}
         else:

@@ -1,10 +1,12 @@
 """Public group-level relationship facts; no actor proof or private data."""
-from ..shared.core import opaque,require,digest,Scope
+from ..shared.core import opaque,require,digest,Scope,qq
 
 def public_context(plugin,stream_id,bot_account_id,route_scope):
-    require(plugin.ready and bool(plugin.bot_account),'NOT_READY')
+    require(plugin.ready and plugin.active is not None,'NOT_READY')
     opaque(stream_id)
-    require(bot_account_id==plugin.bot_account and route_scope==(plugin.active.identity.route_scope or None),'SCOPE_MISMATCH')
+    # Called only after the API adapter verifies the Host route.
+    qq(bot_account_id)
+    require(route_scope==(plugin.active.identity.route_scope or None),'SCOPE_MISMATCH')
     counts={kind:0 for kind in ('friend','family','partner')}
     disputed=False
     with plugin.db.guard:

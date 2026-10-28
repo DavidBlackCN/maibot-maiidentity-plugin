@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_versions_minimal_capabilities_single_entry_license_and_domain_boundaries():
     manifest = json.loads((ROOT/"_manifest.json").read_text(encoding="utf-8"))
-    assert manifest["id"] == PLUGIN_ID and manifest["version"] == PLUGIN_VERSION == "3.2.1"
+    assert manifest["id"] == PLUGIN_ID and manifest["version"] == PLUGIN_VERSION == "3.2.2"
     assert (CONFIG_VERSION, DB_SCHEMA, API_MAJOR) == ("3", 1, "1")
-    assert set(manifest["capabilities"]) == {"message.get_by_id", "config.get", "component.list_loaded_plugins", "send.text"}
+    assert set(manifest["capabilities"]) == {"message.get_by_id", "chat.get_all_streams", "component.list_loaded_plugins", "send.text"}
     # Git and Windows checkouts may use different line endings for the same license.
     license_bytes = (ROOT/"LICENSE").read_bytes().replace(b"\r\n", b"\n")
     assert hashlib.sha256(license_bytes).hexdigest() == "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
