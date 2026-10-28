@@ -34,6 +34,11 @@ async def owned_io(function, *args, **kwargs):
 class MaiIdentityPlugin(MaiBotPlugin):
     config_model = MaiIdentityConfig
 
+    @classmethod
+    def build_config_schema(cls, **metadata):
+        from .schema import build_schema
+        return build_schema(**metadata)
+
     def __init__(self):
         super().__init__()
         self.db = self.lease = self.active = self.identity = self.policy = self.relations = None
@@ -351,7 +356,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def status(self, stream_id="", **kwargs):
         if not stream_id:
             return True, "MaiIdentity status: no target stream", 1
-        text = "MaiIdentity 3.2.0；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
+        text = "MaiIdentity 3.2.1；"+("已就绪" if self.ready else "未启用")+"；官方命令入口可用，无需 Host 补丁；关系不是执行许可。"
         try:
             sent = await self.ctx.send.text(text, stream_id)
             return True, "public status sent" if sent is True else "normal send denied", 1

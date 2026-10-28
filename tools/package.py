@@ -45,7 +45,7 @@ def verify(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT/"dist/MaiIdentity-3.2.0.zip")
+    parser.add_argument("--output", type=Path, default=ROOT/"dist/MaiIdentity-3.2.1.zip")
     args = parser.parse_args()
     verify_acceptance()
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-# MaiIdentity 3.2.0 验收证据
+# MaiIdentity 3.2.1 验收证据
 
 本版打包必须重新运行 T0 单元、T1 原版 Runner、T2 原生 Host、迁移 CLI，并生成与当前 candidate_files、validation_files 一致的 acceptance.json。任何旧源码记录都不能替代当前通过记录。
 
