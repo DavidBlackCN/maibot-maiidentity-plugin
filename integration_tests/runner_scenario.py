@@ -33,7 +33,7 @@ async def run(work):
     rpc = RPCServer(transport, host_version="1.3.12")
     ready = asyncio.Event()
     registrations, logs, calls, messages, revoked = {}, [], [], {}, []
-    allowed = {PLUGIN_ID: {"config.get", "component.list_loaded_plugins", "message.get_by_id", "send.text"}, CONSUMER: {"api.call"}}
+    allowed = {PLUGIN_ID: {"config.get", "component.list_loaded_plugins", "message.get_by_id", "send.text", "security.resolve_command"}, CONSUMER: {"api.call"}}
     class Capabilities(RuntimeCoreCapabilityMixin, RuntimeDataCapabilityMixin, RuntimeComponentCapabilityMixin):
         @property
         def supervisors(self):

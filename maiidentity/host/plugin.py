@@ -127,11 +127,16 @@ class MaiIdentityPlugin(MaiBotPlugin):
     def _bootstrap(self):
         cfg = self.active
         accounts = {AccountKey(e.platform, e.adapter_namespace, e.account_id).key for e in cfg.identity.accounts if e.enabled}
+        accounts.update(AccountKey('qq',cfg.identity.adapter_namespace,a).key for a in cfg.management.vita_admin_accounts)
         for role in cfg.roles.entries:
             require(AccountKey(role.account.platform, role.account.adapter_namespace, role.account.account_id).key in accounts,
                     "ROLE_ACCOUNT_NOT_CONFIGURED")
-        config_hash = digest({"accounts": [e.model_dump() for e in cfg.identity.accounts],
-                              "roles": [e.model_dump() for e in cfg.roles.entries]})
+        bootstrap_config={"accounts": [e.model_dump() for e in cfg.identity.accounts],
+                          "roles": [e.model_dump() for e in cfg.roles.entries]}
+        # Preserve the previous fingerprint when the new option is untouched;
+        # an upgrade alone must not look like an operator's binding review.
+        if cfg.management.vita_admin_accounts: bootstrap_config['management']=cfg.management.model_dump()
+        config_hash=digest(bootstrap_config)
         with self.db.transaction():
             old = self.db.get("bootstrap", "current")
             if old and old["hash"] == config_hash:
@@ -145,6 +150,11 @@ class MaiIdentityPlugin(MaiBotPlugin):
                     role["status"] = "revoked"
                     self.db.put("role", role["id"], role, role["revision"])
                     self.policy._bump(role["subject"])
+            for grant in self.db.records('grant'):
+                if grant.get('management_config_origin') and grant['status']=='active':
+                    grant['status']='revoked'
+                    self.db.put('grant',grant['id'],grant,grant['revision'])
+                    self.policy._bump(grant['subject'])
             for account in sorted(accounts):
                 existing = self.db.conn.execute("SELECT * FROM bindings WHERE account=?", (account,)).fetchone()
                 if existing:
@@ -163,6 +173,15 @@ class MaiIdentityPlugin(MaiBotPlugin):
                 self.db.put("role", ref, {"id": ref, "subject": binding["subject"], "role": entry.role,
                     "scope": entry.scope, "status": "active", "config_origin": True})
                 self.policy._bump(binding["subject"])
+            for account in cfg.management.vita_admin_accounts:
+                binding=self.identity.lookup(AccountKey('qq',cfg.identity.adapter_namespace,account))
+                scope=Scope('instance',cfg.plugin.instance_id,'default','qq',cfg.identity.adapter_namespace,'life','default')
+                for capability in ('maivita.wake','maivita.replan'):
+                    ref=uuid.uuid4().hex
+                    self.db.put('grant',ref,{'id':ref,'subject':binding['subject'],'capability':capability,
+                        'scope':scope.data(),'effect':'allow','delegable':False,'expires':None,'status':'active',
+                        'source':'operator_config','management_config_origin':True})
+                self.policy._bump(binding['subject'])
             self.db.put("bootstrap", "current", {"hash": config_hash}, old["revision"] if old else None)
             self.db.audit("bootstrap.reviewed", "current", {"revision": old["revision"]+1 if old else 1})
 
@@ -262,6 +281,19 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def authorize(self, **kwargs):
         return PublicAPI().call("authorize", **kwargs)
 
+    @API('authorize_vita_command',public=True,version='1')
+    async def authorize_vita_command(self,**kwargs):
+        from .trusted import FIELD,resolve_command
+        from .vita_management import authorize
+        from ..shared.core import Denied
+        try:
+            command=await resolve_command(self,kwargs.get(FIELD),caller='davidblackcn.maibot-maivita-plugin',name='maivita')
+            return await owned_io(authorize,self,command)
+        except Denied as exc:
+            return {'allowed':False,'reason':exc.code}
+        except Exception:
+            return {'allowed':False,'reason':'UNAVAILABLE'}
+
     @API("get_confirmed_relations", public=True, version="1")
     async def get_confirmed_relations(self, **kwargs):
         return PublicAPI().call("get_confirmed_relations", **kwargs)
@@ -278,9 +310,34 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def status(self, stream_id="", **kwargs):
         if not stream_id:
             return True, "MaiIdentity status: no target stream", 1
-        text = "MaiIdentity 3.0.0；"+("已就绪" if self.ready else "未启用")+"；跨插件特权关闭；上下文不是执行许可。"
+        text = "MaiIdentity 3.1.0；"+("已就绪" if self.ready else "未启用")+"；命令管理需 Host 可信上下文及本地授权；关系不是执行许可。"
         try:
             sent = await self.ctx.send.text(text, stream_id)
             return True, "public status sent" if sent is True else "normal send denied", 1
         except Exception:
             return True, "normal send unavailable", 1
+
+    @Command('maiidentity_manage',pattern=r'^/maiidentity(?:\s|$)',description='身份状态及可信 Host 下的本人登记、双方关系确认')
+    async def self_command(self,text='',stream_id='',**kwargs):
+        if text.strip() in ('/maiidentity','/maiidentity status'):
+            return await self.status(stream_id=stream_id)
+        from .trusted import FIELD,IDENTITY,resolve_command
+        from .self_service import apply
+        from ..shared.core import Denied
+        target=''
+        try:
+            command=await resolve_command(self,kwargs.get(FIELD),caller=IDENTITY,name='maiidentity_manage')
+            target=command.get('stream_id','')
+            message=await owned_io(apply,self,command)
+        except Denied as exc:
+            # No trusted stream on old Host: return a diagnostic, never use a
+            # forged API/command argument to choose a private receipt target.
+            message='MaiIdentity 未执行：'+exc.code
+            if not target: return True,message,2
+        except Exception:
+            return True,'MaiIdentity storage unavailable; action not confirmed',2
+        try:
+            sent=await self.ctx.send.text(message,target)
+            return True,'self command handled' if sent is True else 'normal send denied',2
+        except Exception:
+            return True,'normal send unavailable',2

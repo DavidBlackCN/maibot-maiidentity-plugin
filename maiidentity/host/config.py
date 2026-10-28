@@ -82,6 +82,19 @@ class CompatibilitySection(Section):
     legacy_templates_enabled: Literal[False] = False
 
 
+class ManagementSection(Section):
+    # Local operator configuration. Empty means nobody may wake/replan Vita.
+    vita_admin_accounts: list[str] = Field(default_factory=list,max_length=16)
+
+    @field_validator('vita_admin_accounts')
+    @classmethod
+    def accounts(cls,value):
+        from ..shared.core import qq
+        for account in value: qq(account)
+        if len(set(value))!=len(value): raise ValueError('duplicate admin account')
+        return value
+
+
 class MaiIdentityConfig(Section):
     plugin: PluginSection = Field(default_factory=PluginSection)
     identity: IdentitySection = Field(default_factory=IdentitySection)
@@ -90,6 +103,7 @@ class MaiIdentityConfig(Section):
     security: SecuritySection = Field(default_factory=SecuritySection)
     compatibility: CompatibilitySection = Field(default_factory=CompatibilitySection)
     integrations: IntegrationsSection = Field(default_factory=IntegrationsSection)
+    management: ManagementSection = Field(default_factory=ManagementSection)
 
     @model_validator(mode="after")
     def enabled_review(self):

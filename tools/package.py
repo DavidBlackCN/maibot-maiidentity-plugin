@@ -7,7 +7,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "LICENSE", "README.md", "config.example.toml", "requirements-tools.txt")
-DOCS = ("INSTALL.md", "API.md", "CONTRACTS.md", "SOURCE_LAYOUT.md", "MIGRATION.md", "LIMITATIONS.md", "ACCEPTANCE.md", "ROLLBACK.md", "SOURCES.md", "acceptance.json")
+DOCS = ("INSTALL.md", "API.md", "CONTRACTS.md", "SOURCE_LAYOUT.md", "MIGRATION.md", "LIMITATIONS.md", "ACCEPTANCE.md", "ROLLBACK.md", "SOURCES.md", "JOINT_RELEASE.md", "acceptance.json")
 TOOLS = ("migrate_config.py",)
 
 
@@ -45,7 +45,7 @@ def verify(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT/"dist/MaiIdentity-3.0.0.zip")
+    parser.add_argument("--output", type=Path, default=ROOT/"dist/MaiIdentity-3.1.0.zip")
     args = parser.parse_args()
     verify_acceptance()
     args.output.parent.mkdir(parents=True, exist_ok=True)

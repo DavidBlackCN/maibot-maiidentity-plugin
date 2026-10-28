@@ -1,17 +1,17 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "name": "MaiIdentity",
-  "description": "Account identity, deterministic local policy, confirmed relations and bounded model context. Cross-plugin privileges disabled.",
+  "description": "Account identity and confirmed relations; optional Host-verified self service and Vita command policy.",
   "author": {
     "name": "DavidBlackCN",
     "url": "https://github.com/DavidBlackCN"
   },
   "license": "GPL-3.0-or-later",
   "urls": {
-    "repository": "https://github.com/DavidBlackCN/maibot-maiIdentity-plugin",
-    "homepage": "https://github.com/DavidBlackCN/maibot-maiIdentity-plugin"
+    "repository": "https://github.com/DavidBlackCN/maibot-maiidentity-plugin",
+    "homepage": "https://github.com/DavidBlackCN/maibot-maiidentity-plugin"
   },
   "host_application": {
     "min_version": "1.3.12",
@@ -26,6 +26,7 @@
     "message.get_by_id",
     "config.get",
     "component.list_loaded_plugins",
+    "security.resolve_command",
     "send.text"
   ],
   "plugin_type": "extension",

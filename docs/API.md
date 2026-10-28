@@ -1,3 +1,5 @@
+> 当前联动版本 3.1.0（2026-10-28）：默认安装与可选可信命令以[本版说明](JOINT_RELEASE.md)为准。下文原有通用特权 API 限制仍适用；可选有限命令需要独立 Host 扩展。
+
 # 公共 API major 1
 
 正式 SDK 路由为 `davidblackcn.maibot-maiidentity-plugin.<method>`，调用使用 `ctx.api.call(route, version="1", **payload)`。该方法已通过真实 Runner 和 Host 调用。`public=True` 仅表示路由可访问。

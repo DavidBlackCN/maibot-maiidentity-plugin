@@ -11,12 +11,13 @@ class Relations:
     def __init__(self, policy):
         self.policy, self.db = policy, policy.db
 
-    def propose(self, actor, right, relation_type, scope, *, visibility, domain, key, expires=None):
+    def propose(self, actor, right, relation_type, scope, *, visibility, domain, key, expires=None, confirm_before=None):
         self.policy.current(actor)
         opaque(right)
         require(right != actor.subject_id and relation_type in TYPES, "INVALID_RELATION")
         require(visibility in ("public", "participants") and domain in ("user_declared", "character_roleplay"), "INVALID_RELATION")
         require(expires is None or expires > self.db.clock.now(), "EVIDENCE_EXPIRED")
+        require(confirm_before is None or confirm_before > self.db.clock.now(), "EVIDENCE_EXPIRED")
         require(not right.startswith("character:") or domain == "character_roleplay", "INVALID_RELATION")
         def apply():
             self.policy.current(actor)
@@ -26,10 +27,13 @@ class Relations:
                     "confirmations": [actor.subject_id], "confirmation_method": None, "evidence_refs": [],
                     "created_by": actor.subject_id, "created_at": self.db.clock.iso(), "confirmed_at": None,
                     "expires": expires, "revoked_at": None}
+            if confirm_before is not None: data['confirm_before']=confirm_before
             result = self.db.put("relation", ref, data)
             self.db.audit("relation.proposed", ref, {"type": relation_type})
             return result
-        return self.db.once(key, ["relation", actor.subject_id, right, relation_type, scope.data(), visibility, domain, expires], apply)
+        payload=["relation", actor.subject_id, right, relation_type, scope.data(), visibility, domain, expires]
+        if confirm_before is not None: payload.append(confirm_before)
+        return self.db.once(key, payload, apply)
 
     def _complete(self, data, expected):
         pair = sorted([data["left"], data["right"]])
@@ -50,6 +54,7 @@ class Relations:
             data = self.db.get("relation", ref)
             require(data is not None and data["revision"] == expected and data["status"] == "pending_confirmation", "STALE_REVISION")
             require(data["expires"] is None or data["expires"] > self.db.clock.now(), "EVIDENCE_EXPIRED")
+            require(data.get('confirm_before') is None or data['confirm_before'] > self.db.clock.now(), 'EVIDENCE_EXPIRED')
             character = data["right"].startswith("character:")
             if character:
                 require(character_rule is True and actor.subject_id == data["left"], "PERMISSION_DENIED")

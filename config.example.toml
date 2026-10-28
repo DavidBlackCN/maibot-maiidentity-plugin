@@ -15,6 +15,11 @@ adapter_namespace = "host-qq"
 route_scope = ""
 accounts = []
 
+# Optional: requires the separately validated Host command-context extension.
+# Local QQ allowlist grants only Vita wake/replan; empty grants nobody.
+[management]
+vita_admin_accounts = []
+
 [roles]
 entries = []
 
