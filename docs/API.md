@@ -1,7 +1,3 @@
-> 阶段参考文档：本文保留早期实现边界。当前 3.2.0 使用方式与开放能力以 [PRODUCT_GUIDE](PRODUCT_GUIDE.md) 为准；未实现的通用特权仍不开放。
-
-> 当前版本 3.1.1：官方 Host 命令入口及只读策略，无需私有补丁。使用与边界见[本版说明](JOINT_RELEASE.md)，下文通用特权 API 限制仍适用。
-
 # 公共 API major 1
 
 正式 SDK 路由为 `davidblackcn.maibot-maiidentity-plugin.<method>`，调用使用 `ctx.api.call(route, version="1", **payload)`。该方法已通过真实 Runner 和 Host 调用。`public=True` 仅表示路由可访问。
@@ -10,7 +6,8 @@
 |---|---|
 | get_contract | 匿名公开：插件、配置、DB、API 版本及实际启用边界，不含账号 |
 | resolve_identity / get_identity | UNTRUSTED_CONTEXT |
-| get_vita_policy | 只读布尔规则查询，不证明调用者身份，不签发执行凭据；字段见 JOINT_RELEASE |
+| get_vita_policy | 只读布尔规则查询，不证明调用者身份，不签发执行凭据；字段见下文 |
+| get_public_social_context | 当前群公开关系计数和风格摘要，无账号、主体或私密关系 |
 | authorize_vita_command | 已停用，始终 LOCAL_COMMAND_REQUIRED |
 | authorize | UNTRUSTED_CONTEXT，不签发 proof 或执行许可 |
 | get_confirmed_relations | UNTRUSTED_CONTEXT，不泄露私密关系存在性 |
@@ -26,3 +23,9 @@
 委托需要显式目的、精确能力/资源/范围/参数、时限、次数和预算；首版不转委托。任务只保存 grant_ref；预留时重新读取绑定 epoch、授权/策略 revision，并在同一 SQLite 事务消费次数。预留响应明确 `reservation_only=true, external_execution_authorized=false`，不能当外部执行令牌。未知结果不返还次数、不换新键重发；需可信执行者对账后才可继续。首版不提供外部执行器或调度器。
 
 Hook 使用的模型投影 schema_version=1 与 API 响应不同。Replyer 的 subject 来自精确被回复消息；actor 始终不由 subject 推导。Planner 的未知 typed items 不修改；有已核实 extra_prompt 形状时只能给一般来源规则。默认预算 2048 UTF-8 字节，删除非必要字段仍保留来源说明；没有 proof、账号列表、挑战或私密关系。自有块使用实例所有权标记做幂等替换，跨重载仍能替换旧块。内部标记密钥只存自己的 SDK 数据根，此标记不能认证身份、授予权限或被 API 当作 proof。
+
+## 有限管理策略与公开社交查询
+
+`get_vita_policy@1` 必须且只能传入 account_id、bot_account_id、route_scope、stream_id、action。action 为 wake、enqueue_replan、start_sleep、start_activity、end_activity、apply_plan_patch 或 manage_goal。Host 路由必须与 bot_account_id/route_scope 相符；空配置 scope 对应请求中的 null，而不是空字符串。返回独立结构 `{"policy_version": 1, "allowed": false}`（允许时为 true），失败统一拒绝。它不使用通用 envelope，不证明实际作者，Vita 必须从自己的官方 Command 上下文核对作者。
+
+`get_public_social_context@1` 必须且只能传入 stream_id、bot_account_id、route_scope，并通过相同路由核对。响应采用通用 envelope；不可用时 error 为 CONTEXT_UNAVAILABLE。data 包含 stream_id、counts（friend/family/partner，各不超过 20）、relation_state、completeness、style、rule、revision。仅计入当前群公开有效关系；争议时计数归零并给出 neutral 风格。不返回账号、主体 ID 或私密关系。

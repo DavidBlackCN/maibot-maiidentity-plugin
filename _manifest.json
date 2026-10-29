@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "name": "MaiIdentity",
   "description": "Account identity and confirmed relations; official Host command entry; self service and Vita command policy.",
   "author": {

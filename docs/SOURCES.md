@@ -8,4 +8,4 @@
 
 核对了真实 SDK MessageCapability.get_by_id、APICapability.call、PluginContext.paths、插件配置/装饰器，以及 Host runner/plugin_loader、plugin_paths、runner_main、capabilities/components/data、message_utils、HookDispatcher、Planner payload 和 message_id_alias。SDK 返回 message.get_by_id 的业务值已解包，不能按旧版 envelope 再取 message。Host api.call 没有给目标端可信 caller/actor 上下文，不能据路由 public 推断授权。
 
-本地无全局 Python/SDK 更新；T0 使用独立 .venv，T1/T2 使用独立 .integration/host-env，依赖从已有隔离环境只读复制。可复现依赖分别为 requirements-dev.txt 和 requirements-host.txt；新环境可用 tools/setup_host_fixture.py 从固定公开归档准备源。验证范围以 [ACCEPTANCE](ACCEPTANCE.md) 和其摘要指纹为准，不沿用其他项目测试成绩。
+本地无全局 Python/SDK 更新；T0 使用独立 .venv，T1/T2 使用独立 .integration/host-env，依赖从已有隔离环境只读复制。可复现依赖分别为 requirements-dev.txt 和 requirements-host.txt；新环境可用 tools/setup_host_fixture.py 从固定公开归档准备源。历史机器记录保留在 acceptance.json 与 evidence/；版本变化见 [UPDATE_NOTES](../UPDATE_NOTES.md)。

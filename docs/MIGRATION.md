@@ -21,7 +21,7 @@ python tools/migrate_config.py --apply --source D:/test/old.toml --target D:/tes
 python tools/migrate_config.py --activate --target D:/test/maiidentity-stage --route-scope default --writer-lock D:/test/locks/maiidentity.lock
 ```
 
-首次激活可额外传 `--bootstrap-config D:/test/local-bootstrap.toml`。该文件只能包含显式新增的 `[[identity.accounts]]` 和 `[roles]`/`[[roles.entries]]`（角色字段见 [安装](INSTALL.md)）；账号命名空间与实例 scope 必须匹配迁移目标。允许另加本机指定管理员账号，不从旧称谓推断；冲突的已有 disabled 条目不能通过合并暗中启用。未提供文件则没有管理员。文件来源 SHA256 进入激活标记与审计。
+首次激活可额外传 `--bootstrap-config D:/test/local-bootstrap.toml`。该文件只能包含显式新增的 `[[identity.accounts]]` 和 `[roles]`/`[[roles.entries]]`（角色字段见 [安装](../README.md)）；账号命名空间与实例 scope 必须匹配迁移目标。允许另加本机指定管理员账号，不从旧称谓推断；冲突的已有 disabled 条目不能通过合并暗中启用。未提供文件则没有管理员。文件来源 SHA256 进入激活标记与审计。
 
 该命令使 staging 配置 enabled=true，写本机确认标记、数据库 migration_state 和最后的 activation.json 配置摘要；不启动任何服务。崩溃处于 activating 时启动拒绝，不猜测或自动修复。保留现场后从原快照另建目标重新迁移。此工具只支持首次激活，激活后的配置变更需要另行成对运维方案，不手工删除保护标记。
 

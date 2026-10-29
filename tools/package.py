@@ -6,8 +6,8 @@ import json
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "LICENSE", "README.md", "config.example.toml", "requirements-tools.txt")
-DOCS = ("INSTALL.md", "API.md", "CONTRACTS.md", "SOURCE_LAYOUT.md", "MIGRATION.md", "LIMITATIONS.md", "ACCEPTANCE.md", "ROLLBACK.md", "SOURCES.md", "JOINT_RELEASE.md", "PRODUCT_GUIDE.md", "acceptance.json")
+TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "LICENSE", "README.md", "UPDATE_NOTES.md", "config.example.toml", "requirements-tools.txt")
+DOCS = ("API.md", "CONTRACTS.md", "SOURCE_LAYOUT.md", "MIGRATION.md", "LIMITATIONS.md", "ROLLBACK.md", "SOURCES.md", "acceptance.json")
 TOOLS = ("migrate_config.py",)
 
 
