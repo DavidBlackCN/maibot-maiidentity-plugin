@@ -7,11 +7,12 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from tools.workspace_paths import EVIDENCE
 from tools.package import fingerprint
 
 if __name__ == "__main__":
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1", PYTEST_DISABLE_PLUGIN_AUTOLOAD="1")
-    target = ROOT/"evidence"; target.mkdir(exist_ok=True)
+    target = EVIDENCE; target.mkdir(parents=True,exist_ok=True)
     candidate = fingerprint()
     result = subprocess.call([sys.executable, "-m", "pytest", "-p", "pytest_asyncio.plugin", "tests", "-q",
                               "--junitxml="+str(target/"unit.xml"), *sys.argv[1:]], cwd=ROOT, env=env)

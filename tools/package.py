@@ -3,11 +3,14 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tools.workspace_paths import EVIDENCE
 TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "LICENSE", "README.md", "UPDATE_NOTES.md", "config.example.toml", "requirements-tools.txt")
-DOCS = ("API.md", "CONTRACTS.md", "SOURCE_LAYOUT.md", "MIGRATION.md", "LIMITATIONS.md", "ROLLBACK.md", "SOURCES.md", "acceptance.json")
+DOCS = ("API.md", "CONTRACTS.md", "MIGRATION.md", "LIMITATIONS.md", "ROLLBACK.md", "SOURCES.md")
 TOOLS = ("migrate_config.py",)
 
 
@@ -25,7 +28,9 @@ def fingerprint():
 
 
 def verify_acceptance():
-    report=json.loads((ROOT/"docs/acceptance.json").read_text(encoding="utf-8"))
+    path=EVIDENCE/'acceptance.json'
+    assert path.is_file(), 'stale acceptance: generate current reports outside the repository before packaging'
+    report=json.loads(path.read_text(encoding="utf-8"))
     assert report.get("candidate_files")==fingerprint(), "stale acceptance: regenerate current gates before packaging"
     assert all(report.get(layer,{}).get("passed") is True for layer in ("T0","T1","T2","migration_cli")), "incomplete acceptance"
     validation={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()

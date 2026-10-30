@@ -8,6 +8,8 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tools.workspace_paths import EVIDENCE
 
 
 if __name__ == "__main__":
@@ -35,6 +37,6 @@ if __name__ == "__main__":
     report = {"passed": True, "source_sha256": original, "synthetic_only": True, "source_unchanged": True,
               "dry_run_no_write": True, "idempotent_apply": True, "paired_activation": True,
               "rollback_preserves_new_data": True, "command": "python tools/rehearse_migration.py"}
-    target = ROOT/"evidence/migration-cli.json"; target.parent.mkdir(exist_ok=True)
+    target = EVIDENCE/'migration-cli.json'; target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))

@@ -1,5 +1,7 @@
 name: deterministic-and-runner
 on: [push, pull_request]
+env:
+  MAIBOT_EVIDENCE_DIR: ../docs/reports/maibot-maiIdentity-plugin
 jobs:
   checks:
     runs-on: windows-latest
@@ -25,9 +27,9 @@ jobs:
         with:
           name: maiidentity-checks-${{ github.sha }}
           path: |
-            evidence/*.json
-            evidence/unit.xml
-            docs/acceptance.json
+            ../docs/reports/maibot-maiIdentity-plugin/*.json
+            ../docs/reports/maibot-maiIdentity-plugin/unit.xml
+            ../docs/reports/maibot-maiIdentity-plugin/acceptance.json
             dist/MaiIdentity-*.zip
 
   linux-1-3-15:

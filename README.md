@@ -144,14 +144,7 @@ cache_ttl_seconds = 300
 
 `planner_actor_enabled`、`alias_enabled`、`security.binding_challenge_enabled`、`security.raw_prompt_logging`、`compatibility.legacy_templates_enabled` 和两个 `integrations` 开关固定为 false；`guard_mode` 固定为 `context_only`。登记和关系管理不需要启用这些开关，不提供通用跨插件特权委托。
 
-## 自 v3.0.0 以来的修改
-
-- v3.2.2：按适配器实际会话核对身份路由，拒绝请求可通过普通发送返回提示。
-- v3.2.1：修复 WebUI 配置 Schema 与空枚举展示。
-- v3.2.0：增加有限生活管理策略、公开社交摘要及关系中文命令。
-- v3.1.x：提供官方 Host 自助命令与 Vita 策略，默认安装不要求手填实例字段。
-
-详细历史见 [UPDATE_NOTES.md](UPDATE_NOTES.md)。
+版本变化见 [UPDATE_NOTES.md](UPDATE_NOTES.md)。
 
 ## 已知限制
 

@@ -19,7 +19,7 @@ H01：可信发送回执的用途、attempt、stream 和一次性消费独立验
 
 后续联合验收必须验证发行方/caller、真实上下文、请求/动作/资源/流绑定、epoch/revision、过期/撤销/重放、跨进程原子消费，以及身份允许但策略拒绝。JSON Schema、单元端口、原生拒绝路径与生态互通是不同证据层级。
 
-## 2026-10-24 联合审查修复候选补充
+## 与 Hush 的权限边界
 
 固定支持 Host 1.3.12 / SDK 2.15.0，manifest 与加载检查一致。新增能力目录 maihush.mute / maihush.renew / maihush.unmute / maihush.configure，均不可委托，均无内置角色自动授予。执行目标必须是 QQ 的 stream scope、group resource，仍要求独立 external_policy=True。静态目录由本地代码控制，未开放任意插件注册或重定义命名空间的接口。
 
@@ -28,4 +28,4 @@ H01：可信发送回执的用途、attempt、stream 和一次性消费独立验
 当前 get_contract 的 host/sdk 字段报告实际运行版本；支持 1.3.12/2.15.0 和 1.3.15/2.16.0 配对。此兼容性修订没有开放 H03、委托传输或跨插件写权限。
 
 
-2026-10-27 默认安装修订：Vita 的空 allowed_streams 表示所有 Host 接入会话，非空仍精确限制；Identity 的空 route_scope 仅匹配消息 scope=None。自动实例标识、自动锁和默认启用均不建立可信调用者身份，不开放 H01/H02/H03 或跨插件特权。
+默认会话范围：Vita 的空 allowed_streams 表示所有 Host 接入会话，非空仍精确限制；Identity 的空 route_scope 仅匹配消息 scope=None。自动实例标识、自动锁和默认启用均不建立可信调用者身份，不开放 H01/H02/H03 或跨插件特权。

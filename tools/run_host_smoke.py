@@ -8,6 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from tools.workspace_paths import EVIDENCE
 from integration_tests.support import HOST, environment, run_process, stage, verify_source
 from tools.package import fingerprint
 
@@ -34,7 +35,7 @@ def main():
     report.update(host_commit=lock["host_commit"], host_version=lock["host_version"], sdk_version=lock["sdk_version"], host_files_verified=len(lock["host_files"]))
     assert candidate == fingerprint()
     report.update(candidate_files=candidate, python=sys.version, sdk_files=lock["sdk_files"], command="python tools/run_host_smoke.py --isolated-root <new-isolated-directory>")
-    target = ROOT/"evidence/host.json"; target.parent.mkdir(exist_ok=True)
+    target = EVIDENCE/'host.json'; target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k not in ("candidate_files", "sdk_files")}, ensure_ascii=False, indent=2))
 

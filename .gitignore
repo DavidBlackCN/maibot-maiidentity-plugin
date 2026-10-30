@@ -9,3 +9,22 @@ config.toml
 *.db
 *.db-wal
 *.db-shm
+
+# Only user-facing reference documents belong in this repository.
+/docs/*
+!/docs/API.md
+!/docs/CONTRACTS.md
+!/docs/LIMITATIONS.md
+!/docs/MIGRATION.md
+!/docs/ROLLBACK.md
+!/docs/SOURCES.md
+
+# Generated reports, local records and caches are never release sources.
+/evidence/
+/reports/
+/logs/
+/handoff/
+*.log
+*.tmp
+.mypy_cache/
+.ruff_cache/

@@ -7,11 +7,12 @@ from datetime import datetime, timezone, timedelta
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from tools.workspace_paths import EVIDENCE
 from tools.package import fingerprint
 
 
 if __name__ == "__main__":
-    reports = {name: json.loads((ROOT/"evidence"/(name+".json")).read_text(encoding="utf-8"))
+    reports = {name: json.loads((EVIDENCE/(name+".json")).read_text(encoding="utf-8"))
                for name in ("unit", "runner", "host", "migration-cli")}
     candidate = fingerprint()
     assert all(report["passed"] is True for report in reports.values())
@@ -30,6 +31,6 @@ if __name__ == "__main__":
               "not_executed": ["full_bot_cli_WebUI", "real_platform", "paid_model", "trusted_H03_atomic_consume", "MaiVita_policy_joint_acceptance", "long_term_observation"],
               "validation_files": {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for directory in ("tools", "tests", "integration_tests") for p in (ROOT/directory).rglob("*.py")}}
-    target = ROOT/"docs/acceptance.json"
+    target = EVIDENCE/'acceptance.json'
     target.write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n", encoding="utf-8", newline="\n")
     print(json.dumps({"T0": report["T0"]["tests"], "T1": len(report["T1"]["cases"]), "T2": len(report["T2"]["cases"]), "matching_runtime_files": len(candidate)}, indent=2))
