@@ -2,6 +2,8 @@
 
 SDK 路由为 `davidblackcn.maibot-maiidentity-plugin.<method>`，使用 `ctx.api.call(route, version="1", **payload)`。公开接口不证明调用者或实际消息作者身份。
 
+私有 `evaluate_behavior@1` 只供配套统一控制 Host 使用：读取 Host 保存的真实命令作者与目标，再查询管理员名单。固定身份、业务参数中的账号和普通 Tool 调用均不能取得管理权；第三方不能直接调用此接口。
+
 | 方法 | 当前行为 |
 | --- | --- |
 | get_contract | 版本、运行状态及功能描述，不含账号或固定身份名单 |

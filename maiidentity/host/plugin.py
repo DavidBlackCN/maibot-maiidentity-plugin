@@ -181,6 +181,11 @@ class MaiIdentityPlugin(MaiBotPlugin):
     async def get_contract(self, **kwargs):
         return descriptor(self.ready)
 
+    @API('evaluate_behavior', public=False, version='1')
+    async def evaluate_behavior(self, **kwargs):
+        from .behavior import evaluate
+        return evaluate(self)
+
     @API('is_admin', public=True, version='1')
     async def is_admin(self, **kwargs):
         from .vita_management import administrator
