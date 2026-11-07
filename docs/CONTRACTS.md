@@ -1,6 +1,6 @@
 # 插件协作边界
 
-工作区使用 Host 1.3.19／SDK 2.21.0／WebUI 1.9.13。兼容范围由 Manifest 声明并由 Host 校验，运行版本由 get_contract 报告。
+工作区使用 Host 1.4.1／SDK 2.21.0／WebUI 1.10.1。兼容范围由 Manifest 声明并由 Host 校验，运行版本由 get_contract 报告。页面鉴权与 Bot 选择由官方宿主处理，插件不保存登录凭据。
 
 ## MaiVita
 
@@ -22,6 +22,6 @@ Hush 选择 identity 来源时，通过 is_admin 查询此处的管理员名单�
 
 固定名单以安装实例的 `config.toml` 中 `identity.people` 为唯一来源，通过 WebUI 或文件编辑维护。插件接收 Runner 的配置更新，不自行写配置文件，也不提供消息写入命令。
 
-Host 1.3.19 中，`component.update_plugin_config` 只允许内置插件管理器调用；在 Manifest 中声明该能力也不能使普通插件获得写入权限。SDK 的 `set_plugin_config()` 仅设置内存配置，不是持久化接口。工作区因此只提供查询和预览，保存使用官方配置页。
+`component.update_plugin_config` 只允许内置插件管理器调用；在 Manifest 中声明该能力也不能使普通插件获得写入权限。SDK 的 `set_plugin_config()` 仅设置内存配置，不是持久化接口。工作区因此只提供查询和预览，保存使用官方配置页。
 
 共用模板位于 `identity.styles`，个人 `style` 引用模板名称。个人说明非空时覆盖模板；任何在用模板被删除或改名都会在保存校验时被拒绝，必须同时调整引用。

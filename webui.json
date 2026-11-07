@@ -6,7 +6,6 @@
     "id": "identity",
     "title": "身份与相处",
     "description": "查看身份名单、共用模板和管理员，预览当前相处说明。",
-    "placement": "workspace",
     "icon": "list",
     "mode": "custom",
     "entry": "webui/identity.html",

@@ -4,19 +4,15 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
-import socket
-import uuid
 
 import httpx
 import tomlkit
-import uvicorn
 
 from .support import PLUGIN_ID, CONSUMER
 
 
 async def run_cases(work, manager, supervisor, call):
-    from src.webui.app import create_app
-    from src.webui.core.security import get_token_manager
+    from .webui_host import serve
     from src.common.runtime_loop import set_main_loop
     from playwright.async_api import async_playwright
 
@@ -24,15 +20,11 @@ async def run_cases(work, manager, supervisor, call):
     original = tomlkit.parse((work / "plugins/candidate/config.toml").read_text(encoding="utf-8")).unwrap()
     manager._started = True
     set_main_loop(asyncio.get_running_loop())
+    await manager._plugin_catalog.start([], [work / "plugins"])
     await manager._start_plugin_file_watcher()
-    get_token_manager().update_token("Isolated-Identity-" + uuid.uuid4().hex)
-    get_token_manager().mark_setup_completed()
-    token = get_token_manager().get_token()
-    sock = socket.socket(); sock.bind(("127.0.0.1", 0)); sock.listen(128)
-    url = f"http://127.0.0.1:{sock.getsockname()[1]}"
-    server = uvicorn.Server(uvicorn.Config(create_app(host="127.0.0.1"), log_level="error", lifespan="off", timeout_graceful_shutdown=3))
-    task = asyncio.create_task(server.serve(sockets=[sock]))
-    root = "/api/webui/plugins/runtime/webui/" + PLUGIN_ID + "/identity"
+    host = serve(work)
+    url, proxy, password, cookie_name = await host.__aenter__()
+    root = proxy + "/api/webui/plugins/runtime/webui/" + PLUGIN_ID + "/identity"
 
     async def until(predicate):
         async with asyncio.timeout(20):
@@ -41,7 +33,7 @@ async def run_cases(work, manager, supervisor, call):
 
     async with httpx.AsyncClient(base_url=url, timeout=15) as client:
         async def save(config):
-            response = await client.put("/api/webui/plugins/config/" + PLUGIN_ID, json={"config": config})
+            response = await client.put(proxy + "/api/webui/plugins/config/" + PLUGIN_ID, json={"config": config})
             assert response.status_code == 200, response.text
             return response
 
@@ -50,11 +42,11 @@ async def run_cases(work, manager, supervisor, call):
                 "account_id": account, "group_id": group, "revision": state["revision"]}})
 
         try:
-            while not server.started:
-                await asyncio.sleep(.05)
             response = await client.post(root + "/queries/load", json={"args": {}})
             assert response.status_code in (401, 403)
-            client.cookies.set("maibot_session", token)
+            login = await client.post("/api/webui/auth/verify", json={"token": password})
+            assert login.status_code == 200 and login.json()["valid"]
+            token = client.cookies.get(cookie_name)
             response = await client.post(root + "/queries/load", json={"args": {}})
             assert response.status_code == 200, response.text
             before = response.json()["result"]
@@ -91,7 +83,7 @@ async def run_cases(work, manager, supervisor, call):
             assert (await preview(state, group="20002")).json()["result"]["matched_scope"] == ""
             assert (await preview(state, account="10002")).json()["result"]["state"] == "unlisted"
             invalid = deepcopy(updated); invalid["identity"]["styles"] = []
-            response = await client.put("/api/webui/plugins/config/" + PLUGIN_ID, json={"config": invalid})
+            response = await client.put(proxy + "/api/webui/plugins/config/" + PLUGIN_ID, json={"config": invalid})
             assert response.status_code == 400, response.text
             assert (await call("workspace_state"))["revision"] == state["revision"]
             cases.append("official_config_save_watcher_template_scope_preview_parity_and_invalid_rejection")
@@ -101,12 +93,18 @@ async def run_cases(work, manager, supervisor, call):
                 try:
                     context = await browser.new_context(viewport={"width": 1440, "height": 1000})
                     await context.route("**/*", lambda route: route.continue_() if route.request.url.startswith((url + "/", "data:", "blob:")) else route.abort())
-                    await context.add_cookies([{"name": "maibot_session", "value": token, "url": url}])
+                    await context.add_cookies([{"name": cookie_name, "value": token, "url": url}])
                     page = await context.new_page(); errors = []
                     page.on("pageerror", lambda error: errors.append(str(error)))
                     await page.goto(url + "/extensions/" + PLUGIN_ID + "/identity")
                     frame = page.frame_locator("iframe")
-                    await frame.locator("#content").wait_for(state="visible", timeout=25000)
+                    try:
+                        await frame.locator("#content").wait_for(state="visible", timeout=25000)
+                    except Exception:
+                        await page.screenshot(path=str(work / "workspace-failure.png"), full_page=True)
+                        (work / "browser-failure.txt").write_text(
+                            page.url + "\n" + await page.locator("body").inner_text() + "\n" + repr(errors), encoding="utf-8")
+                        raise
                     await frame.get_by_label("搜索名单").fill("20001")
                     assert await frame.locator("tbody tr").count() == 1
                     await frame.get_by_role("button", name="预览", exact=True).click()
@@ -123,7 +121,13 @@ async def run_cases(work, manager, supervisor, call):
                     await frame.locator("#help").wait_for(state="visible")
                     config_page = await context.new_page()
                     await config_page.goto(url + "/plugin-config?plugin=" + PLUGIN_ID)
-                    await config_page.get_by_text("共用相处模板", exact=True).wait_for(timeout=20000)
+                    try:
+                        await config_page.get_by_text("共用相处模板", exact=True).wait_for(timeout=20000)
+                    except Exception:
+                        (work / "config-failure.txt").write_text(
+                            config_page.url + "\n" + await config_page.locator("body").inner_text(), encoding="utf-8")
+                        await config_page.screenshot(path=str(work / "config-failure.png"), full_page=True)
+                        raise
                     editor = None
                     for field in await config_page.locator("textarea,input").all():
                         if await field.input_value() == "与{nickname}轻松相处":
@@ -165,13 +169,12 @@ async def run_cases(work, manager, supervisor, call):
             cases.append("workspace_restart_uses_single_official_config")
         finally:
             await manager._stop_plugin_file_watcher()
+            await manager._plugin_catalog.stop()
             # Only isolated fixture configuration is restored.
             (work / "plugins/candidate/config.toml").write_text(tomlkit.dumps(original), encoding="utf-8")
             await supervisor.reload_plugins([PLUGIN_ID], reason="workspace-fixture-restore")
             manager._started = False
-            server.should_exit = True
-            await asyncio.wait_for(task, 8)
-            sock.close()
+            await host.__aexit__(None, None, None)
     return cases
 
 

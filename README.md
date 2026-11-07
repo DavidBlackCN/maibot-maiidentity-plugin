@@ -2,15 +2,15 @@
 
 让 MaiBot 按 QQ 认出熟悉的人，使用你设置的称呼和相处方式，并为已接入插件提供管理员权限查询。
 
-当前版本 **3.5.0**。身份工作区使用 MaiBot **1.3.19**／Plugin SDK **2.21.0**／WebUI **1.9.13**。
+当前版本 **3.5.1**，已适配 MaiBot **1.4.1**／Plugin SDK **2.21.0**／WebUI **1.10.1**。完整兼容范围见 [_manifest.json](_manifest.json)。
 
 ## 安装
 
-将插件放入 `MaiBot/plugins/maibot-maiIdentity-plugin/`，目录内应直接包含 `plugin.py`、`_manifest.json`、`maiidentity/`、`webui.json` 和 `webui/`。启动后会生成配置文件。同一插件只安装一份；不要同时启用其他身份提示插件，以免说明冲突。
+将插件放入所选 Bot 实例的 `plugins/maibot-maiIdentity-plugin/`，目录内应直接包含 `plugin.py`、`_manifest.json`、`maiidentity/`、`webui.json` 和 `webui/`。启动后会生成配置文件。同一实例只安装一份；不要同时启用其他身份提示插件，以免说明冲突。
 
 ## 身份工作区
 
-在 WebUI 打开 **MaiIdentity → 身份与相处**：
+在 WebUI 选择 Bot，再从侧栏打开 **MaiIdentity → 身份与相处**：
 
 - **身份名单**：搜索 QQ、称呼和群号，查看启用状态与群专属设置。
 - **相处模板**：查看多人共用的相处说明。
