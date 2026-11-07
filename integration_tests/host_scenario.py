@@ -15,7 +15,7 @@ import tomlkit
 from .support import CONSUMER, PLUGIN_ID, projection
 
 
-async def run(work):
+async def run(work, *, workspace=False):
     from src.config.config import config_manager
     config_manager.initialize()
     cfg = config_manager.get_global_config()
@@ -25,7 +25,7 @@ async def run(work):
     cfg.maim_message.enabled = False
     from src.common.database.database import initialize_database, get_db_session, engine
     initialize_database()
-    from src.plugin_runtime.integration import PluginRuntimeManager
+    from src.plugin_runtime.integration import get_plugin_runtime_manager
     from src.plugin_runtime.host.supervisor import PluginSupervisor
     from src.plugin_runtime.hook_payloads import serialize_session_message
     from src.chat.message_receive.message import SessionMessage
@@ -34,7 +34,7 @@ async def run(work):
     from src.services.message_service import get_message_by_id
     from maiidentity.storage.database import Database, WriterLease
     from maiidentity.shared.core import Denied
-    manager = PluginRuntimeManager()
+    manager = get_plugin_runtime_manager()
     manager.ensure_builtin_hook_specs_registered()
     supervisor = PluginSupervisor(plugin_dirs=[work/"plugins"], group_name="maiidentity-test", hook_spec_registry=manager._hook_spec_registry,
                                   max_restart_attempts=0, health_check_interval_sec=300, runner_spawn_timeout_sec=20)
@@ -96,6 +96,9 @@ async def run(work):
         assert not planner.aborted and "extra_prompt" not in planner.kwargs
         report["cases"].extend(["native_message_DB_query_and_serializer", "exact_A_B_fixed_profile_and_unlisted", "nickname_claim_does_not_define_identity",
                                "multi_hook_context_preservation_and_idempotence", "planner_typed_items_unchanged"])
+        if workspace:
+            from .workspace_scenario import run_cases
+            report["cases"].extend(await run_cases(work, manager, supervisor, call))
         lock = WriterLease(work/"data/plugins"/PLUGIN_ID/"writer.lock")
         try:
             lock.acquire()

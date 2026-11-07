@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "name": "MaiIdentity",
-  "description": "固定身份称呼与相处提示，按消息作者匹配名单，并为 MaiVita 提供管理权限查询。",
+  "description": "按账号设置固定称呼与相处方式，提供身份工作区、提示词预览和管理员权限查询。",
   "author": {
     "name": "DavidBlackCN",
     "url": "https://github.com/DavidBlackCN"

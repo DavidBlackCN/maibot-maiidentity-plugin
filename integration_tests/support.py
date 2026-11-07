@@ -58,6 +58,8 @@ def stage(work, *, consumer=True):
     plugin.mkdir(parents=True)
     for name in ("plugin.py", "_manifest.json"):
         shutil.copyfile(ROOT/name, plugin/name)
+    shutil.copyfile(ROOT/"webui.json", plugin/"webui.json")
+    shutil.copytree(ROOT/"webui", plugin/"webui")
     shutil.copytree(ROOT/"maiidentity", plugin/"maiidentity", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     cfg = {"plugin": {"enabled": True, "config_version": "4"},
            "identity": {"adapter_namespace": "adapter", "route_scope": "route",

@@ -9,7 +9,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.workspace_paths import EVIDENCE
-TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "LICENSE", "README.md", "UPDATE_NOTES.md", "config.example.toml")
+TOP = ("plugin.py", "config.py", "__init__.py", "_manifest.json", "webui.json", "webui/identity.html", "LICENSE", "README.md", "UPDATE_NOTES.md", "config.example.toml")
 DOCS = ("API.md", "CONTRACTS.md", "LIMITATIONS.md", "ROLLBACK.md", "SOURCES.md")
 
 
@@ -22,7 +22,7 @@ def files():
 
 def fingerprint():
     return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted([ROOT/"plugin.py", ROOT/"config.py", ROOT/"_manifest.json", *[p for p in (ROOT/"maiidentity").rglob("*.py") if "__pycache__" not in p.parts]])}
+            for p in sorted([ROOT/"plugin.py", ROOT/"config.py", ROOT/"_manifest.json", ROOT/"webui.json", ROOT/"webui/identity.html", *[p for p in (ROOT/"maiidentity").rglob("*.py") if "__pycache__" not in p.parts]])}
 
 
 def verify_acceptance():

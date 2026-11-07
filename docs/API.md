@@ -13,6 +13,17 @@ SDK 路由为 `davidblackcn.maibot-maiidentity-plugin.<method>`，使用 `ctx.ap
 
 没有开放名单、绑定、用户关系或委托的写 API。调用参数中的 is_owner、verified、caller_plugin_id、proof_ref 不能获得权限。
 
+## 工作区私有接口
+
+`workspace_state@1` 和 `workspace_preview@1` 均为 `public=False`，只绑定到经过 Host 登录验证的工作区页面，不供其他插件读取名单。两者均无文件、数据库或模型写操作。
+
+- `workspace_state`：返回当前生效的身份、模板、管理员名单、配置摘要 `revision`、查询时间和提示启用状态。列表中的个人说明最多 160 字、模板最多 500 字，截断时附标记；预览仍使用完整原文。页面只展示运行时已接收的配置，不将文件保存成功等同于热更新成功。
+- `workspace_preview(account_id, group_id, revision)`：按账号与群范围预览当前 Replyer 身份说明，复用实际匹配、模板选择、占位符替换和字节预算。`group_id` 留空按私聊处理；`revision` 必须与当前状态一致，变更后需要刷新。
+
+预览参数不是可信消息来源，不进入身份缓存、不授予权限。它仅回答“若准确核对出的作者是这个账号，会使用什么说明”。Planner 仍只提供通用身份来源规则。提示关闭时预览不返回注入文本。
+
+编辑继续使用 Host 官方配置页及 Runner 校验、热更新流程；插件不另存 WebUI 配置，不提供写 API。
+
 ## 管理员查询
 
 `is_admin` 必须且只能传入 account_id、bot_account_id、route_scope、stream_id，返回 `{"is_admin": true}` 或 `{"is_admin": false}`。按 Host 实际会话核对机器人账号与 scope，再读取 `management.admin_accounts`；机器人自身、无效参数、未就绪、配置在查询期间变更或查询失败均返回 false。
@@ -37,7 +48,7 @@ Vita 必须从自己的官方 Command 上下文核对真实发令者；查询结
 
 ## 聊天上下文
 
-Replyer 根据准确的被回复消息作者匹配固定配置；群专属条目优先，昵称不作为匹配依据。上下文使用自然语言，区分已配置、当前会话未配置、对象未知。个人说明可被长度预算截短，身份与来源规则保留。
+Replyer 根据准确的被回复消息作者匹配固定配置；群专属条目优先，昵称不作为匹配依据。个人说明非空时覆盖共用模板，否则使用所引用模板；固定称呼独立设置。上下文使用自然语言，区分已配置、当前会话未配置、对象未知。相处说明可被长度预算截短，身份与来源规则保留。
 
 Planner 没有准确回复对象时仅提供通用来源规则。只处理已支持的 Hook 参数和 schema 1 items，不改写 Host 消息历史。每次替换本实例签名验证成功的旧提示，保留其他插件内容。标记签名仅用于识别自身文本，不是授权凭据。
 

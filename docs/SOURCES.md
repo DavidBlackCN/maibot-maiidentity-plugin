@@ -4,4 +4,6 @@ MaiIdentity 基于 [DavidBlackCN/maibot-owner-auth-plugin](https://github.com/Da
 
 分层和公开契约参考 [MaiVita](https://github.com/DavidBlackCN/maibot-maivita-plugin/tree/7ec8fa99b6a2745844913465142e86764167e427)；身份提示和管理查询实现独立维护，没有复制其 AGPL 生活引擎。
 
+身份工作区与共用相处模板的设计参考 [Alcpare/maibot_identity_plugin 1.1.0](https://github.com/Alcpare/maibot_identity_plugin/tree/34f43845617968e0198fee8424287d23d755e796)（MIT）。页面及业务代码独立实现，没有复制其双文件配置保存或消息作者回退机制。
+
 宿主接口与测试基线来自 [MaiBot](https://github.com/Mai-with-u/MaiBot) 和 [maibot-plugin-sdk](https://pypi.org/project/maibot-plugin-sdk/)。可复现版本及源码校验值保存在 `tests/fixtures/`；Host 源码、第三方依赖、运行配置和本地验收记录不随插件分发。版本变化见 [UPDATE_NOTES](../UPDATE_NOTES.md)。

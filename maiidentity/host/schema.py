@@ -3,7 +3,7 @@ from copy import deepcopy
 from maibot_sdk import PluginConfigBase
 from maibot_sdk.config import generate_plugin_config_schema
 from pydantic import Field, create_model
-from .config import PersonEntry, IdentitySection, MaiIdentityConfig
+from .config import PersonEntry, StyleEntry, IdentitySection, MaiIdentityConfig
 
 
 def draft_model(model, defaults, annotations=None):
@@ -19,8 +19,10 @@ def draft_model(model, defaults, annotations=None):
 
 def build_schema(**metadata):
     person = draft_model(PersonEntry, {'qq': '', 'nickname': ''})
+    style = draft_model(StyleEntry, {'name': '', 'prompt': ''})
     identity = create_model('IdentityDraft', __base__=IdentitySection,
-        people=(list[person], Field(default_factory=list, description='QQ、称呼与相处说明', json_schema_extra={'label': '固定身份名单'})))
+        people=(list[person], Field(default_factory=list, description='QQ、称呼与相处说明', json_schema_extra={'label': '固定身份名单'})),
+        styles=(list[style], Field(default_factory=list, description='可选的共用相处说明', json_schema_extra={'label': '共用相处模板'})))
     config = create_model('IdentityConfigDraft', __base__=MaiIdentityConfig,
         identity=(identity, Field(default_factory=identity)))
     schema = generate_plugin_config_schema(config, **metadata)

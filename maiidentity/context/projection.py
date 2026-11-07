@@ -18,22 +18,34 @@ RULE = (
 def match_person(people, evidence):
     if evidence is None:
         return None
-    entries = [p for p in people if p.enabled and p.qq == evidence.account.account_id]
-    if evidence.group_id:
-        specific = next((p for p in entries if p.group_id == evidence.group_id), None)
+    return match_profile(people, evidence.account.account_id, evidence.group_id)
+
+
+def match_profile(people, account_id, group_id):
+    """Configuration lookup only; this does not authenticate an account."""
+    entries = [p for p in people if p.enabled and p.qq == account_id]
+    if group_id:
+        specific = next((p for p in entries if p.group_id == group_id), None)
         if specific is not None:
             return specific
     return next((p for p in entries if p.group_id == ""), None)
 
 
-def snapshot(evidence=None, person=None, *, stage="replyer"):
+def configured(person, styles=(), *, stage="replyer"):
+    prompt = person.prompt_template
+    if not prompt.strip() and person.style:
+        prompt = next(style.prompt for style in styles if style.name == person.style)
+    return {"state": "configured", "stage": stage, "nickname": person.nickname,
+            "prompt": prompt.replace("{nickname}", person.nickname)}
+
+
+def snapshot(evidence=None, person=None, *, stage="replyer", styles=()):
     # Do not copy a nickname, account ID, relation record or grant into the prompt.
     if evidence is None:
         return {"state": "unknown", "stage": stage}
     if person is None:
         return {"state": "unlisted", "stage": stage}
-    return {"state": "configured", "stage": stage, "nickname": person.nickname,
-            "prompt": person.prompt_template.replace("{nickname}", person.nickname)}
+    return configured(person, styles, stage=stage)
 
 
 def render(data, prompt=None):

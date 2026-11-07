@@ -1,0 +1,26 @@
+{
+  "schema_version": 2,
+  "required_capabilities": ["custom_pages"],
+  "workspace_title": "MaiIdentity",
+  "pages": [{
+    "id": "identity",
+    "title": "身份与相处",
+    "description": "查看身份名单、共用模板和管理员，预览当前相处说明。",
+    "placement": "workspace",
+    "icon": "list",
+    "mode": "custom",
+    "entry": "webui/identity.html",
+    "queries": {
+      "load": {"api": "workspace_state", "version": "1"},
+      "preview": {
+        "api": "workspace_preview", "version": "1",
+        "parameters": {
+          "account_id": {"type": "string", "required": true, "max_length": 20},
+          "group_id": {"type": "string", "max_length": 20},
+          "revision": {"type": "string", "required": true, "max_length": 64}
+        }
+      }
+    },
+    "actions": {}
+  }]
+}

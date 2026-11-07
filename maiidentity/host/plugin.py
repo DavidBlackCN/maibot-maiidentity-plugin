@@ -160,7 +160,7 @@ class MaiIdentityPlugin(MaiBotPlugin):
                     return self.projector.inject(kwargs, snapshot(stage=stage))
                 return None
             person = match_person(active.identity.people, evidence)
-            facts = snapshot(evidence, person, stage=stage)
+            facts = snapshot(evidence, person, stage=stage, styles=active.identity.styles)
             if stage=='planner' and 'extra_prompt' not in kwargs:
                 from .typed_prompt import inject
                 result=inject(self,kwargs,facts,'MaiIdentity')
@@ -176,6 +176,16 @@ class MaiIdentityPlugin(MaiBotPlugin):
     @HookHandler("maisaka.planner.before_request", name="maiidentity_planner", error_policy=ErrorPolicy.SKIP)
     async def planner(self, **kwargs):
         return await self._inject(kwargs, "planner")
+
+    @API("workspace_state", public=False, version="1")
+    async def workspace_state(self):
+        from .workspace import state
+        return state(self)
+
+    @API("workspace_preview", public=False, version="1")
+    async def workspace_preview(self, account_id: str, group_id: str = "", revision: str = ""):
+        from .workspace import preview
+        return preview(self, account_id, group_id, revision)
 
     @API("get_contract", public=True, version="1")
     async def get_contract(self, **kwargs):
