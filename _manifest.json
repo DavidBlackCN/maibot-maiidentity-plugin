@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "id": "davidblackcn.maibot-maiidentity-plugin",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "name": "MaiIdentity",
   "description": "按账号设置固定称呼与相处方式，提供身份工作区、提示词预览和管理员权限查询。",
   "author": {
@@ -15,11 +15,11 @@
   },
   "host_application": {
     "min_version": "1.3.12",
-    "max_version": "1.4.2"
+    "max_version": "1.4.3"
   },
   "sdk": {
     "min_version": "2.15.0",
-    "max_version": "2.21.0"
+    "max_version": "2.22.1"
   },
   "dependencies": [],
   "capabilities": [

@@ -1,6 +1,6 @@
 # 插件协作边界
 
-工作区使用 Host 1.4.1／SDK 2.21.0／WebUI 1.10.1。兼容范围由 Manifest 声明并由 Host 校验，运行版本由 get_contract 报告。页面鉴权与 Bot 选择由官方宿主处理，插件不保存登录凭据。
+工作区使用 Host 1.4.3／SDK 2.22.1／WebUI 1.10.3。兼容范围由 Manifest 声明并由 Host 校验，运行版本由 get_contract 报告。页面鉴权与 Bot 选择由官方宿主处理，插件不保存登录凭据。
 
 ## MaiVita
 

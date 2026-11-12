@@ -2,7 +2,7 @@
 
 让 MaiBot 按 QQ 认出熟悉的人，使用你设置的称呼和相处方式，并为已接入插件提供管理员权限查询。
 
-当前版本 **3.5.1**，已适配 MaiBot **1.4.1**／Plugin SDK **2.21.0**／WebUI **1.10.1**。完整兼容范围见 [_manifest.json](_manifest.json)。
+当前版本 **3.5.2**，已适配 MaiBot **1.4.3**／Plugin SDK **2.22.1**／WebUI **1.10.3**。完整兼容范围见 [_manifest.json](_manifest.json)。
 
 ## 安装
 
