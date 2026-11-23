@@ -161,10 +161,9 @@ class MaiIdentityPlugin(MaiBotPlugin):
                 return None
             person = match_person(active.identity.people, evidence)
             facts = snapshot(evidence, person, stage=stage, styles=active.identity.styles)
-            if stage=='planner' and 'extra_prompt' not in kwargs:
+            if stage == "planner" and "extra_prompt" not in kwargs:
                 from .typed_prompt import inject
-                result=inject(self,kwargs,facts,'MaiIdentity')
-                return result if 'modified_kwargs' in result else None
+                return inject(kwargs, facts, self.projector.secret)
             return self.projector.inject(kwargs,facts)
         except Exception:
             return None  # Ordinary chat continues; raw prompt is never logged.

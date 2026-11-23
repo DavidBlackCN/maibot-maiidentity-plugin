@@ -15,13 +15,13 @@ def evidence(mid="long-original-message-id", account="10001", stream="s"):
     return MessageEvidence("i", AccountKey("qq", "ns", account), stream, mid, None, "ordinary")
 
 
-async def resolve(resolver, value=None, original=None, **kw):
-    async def query(mid, stream):
+async def resolve(resolver, value=None, original=None, query=None):
+    async def fixed_result(mid, stream):
         if isinstance(value, Exception):
             raise value
         return value
     return await resolver.resolve(instance="i", platform="qq", namespace="ns", stream="s", message_id=original or "long-original-message-id",
-                                  query=query, parse=lambda raw: raw, **kw)
+                                  query=query or fixed_result, parse=lambda raw: raw)
 
 
 @pytest.mark.asyncio
@@ -42,6 +42,49 @@ async def test_exact_api_cache_conflicts_missing_ids_and_ttl():
     assert len(resolver.cache) == 2
     resolver.close()
     assert not resolver.cache
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("warm_cache", [False, True])
+async def test_author_observed_during_lookup_is_checked_against_host(warm_cache):
+    resolver = MessageResolver()
+    author = evidence()
+    if warm_cache:
+        resolver.observe(author)
+
+    async def query(mid, stream):
+        resolver.observe(evidence(account="10002"))
+        return author
+
+    assert await resolve(resolver, query=query) == (None, "MESSAGE_ID_CONFLICT")
+    assert await resolve(resolver, author) == (None, "MESSAGE_ID_CONFLICT")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change,expected", [
+    ("expire", "IDENTITY_UNRESOLVED"),
+    ("evict", "IDENTITY_UNRESOLVED"),
+    ("refresh", "trusted_cache"),
+    ("conflict", "MESSAGE_ID_CONFLICT"),
+])
+async def test_unavailable_host_uses_current_cache(change, expected):
+    clock = FakeClock()
+    resolver = MessageResolver(clock, ttl=300, capacity=1)
+    author = evidence()
+    resolver.observe(author)
+
+    async def query(mid, stream):
+        if change == "evict":
+            resolver.observe(evidence(mid="another-message"))
+        elif change == "conflict":
+            resolver.observe(evidence(account="10002"))
+        else:
+            clock.value += 301
+            if change == "refresh":
+                resolver.observe(author)
+        raise TimeoutError
+
+    assert await resolve(resolver, query=query) == (author if change == "refresh" else None, expected)
 
 
 def test_host_message_missing_fields_bot_system():

@@ -83,17 +83,26 @@ class MessageResolver:
                 raw = await query(message_id, stream)
             except Exception:
                 raw = None
-            if raw is not None:
-                try:
+            # A receive hook can change or invalidate the evidence during the RPC.
+            self.purge()
+            current = self.cache.get(key)
+            if current and current[1] is None:
+                return None, "MESSAGE_ID_CONFLICT"
+            try:
+                if cached and current:
+                    require(cached[1].same_author(current[1]), "MESSAGE_ID_CONFLICT")
+                if raw is not None:
                     result = parse(raw)
                     require(result.key == key, "MESSAGE_ID_CONFLICT")
-                    require(not cached or result.same_author(cached[1]), "MESSAGE_ID_CONFLICT")
-                except (Denied, TypeError, KeyError):
-                    self.cache[key] = (self.clock.monotonic(), None)
-                    self.purge()
-                    return None, "MESSAGE_ID_CONFLICT"
-                return result, "message_api"
-            return (cached[1], "trusted_cache") if cached else (None, "IDENTITY_UNRESOLVED")
+                    observed = current or cached
+                    require(not observed or result.same_author(observed[1]), "MESSAGE_ID_CONFLICT")
+                    return result, "message_api"
+            except (Denied, TypeError, KeyError):
+                self.cache[key] = (self.clock.monotonic(), None)
+                self.cache.move_to_end(key)
+                self.purge()
+                return None, "MESSAGE_ID_CONFLICT"
+            return (current[1], "trusted_cache") if current else (None, "IDENTITY_UNRESOLVED")
         except (Denied, TypeError):
             return None, "IDENTITY_UNRESOLVED"
 

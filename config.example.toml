@@ -14,7 +14,7 @@ route_scope = ""
 qq = "123456789"
 nickname = "妈妈"
 # 可留空；支持 {nickname}。
-prompt_template = "与{nickname}自然亲近，可以撒娇，关心点到为止。"
+prompt_template = "与{nickname}自然亲近。她提到熬夜时关心一句，聊别的话题时自然接话。"
 # 可选：引用下方模板；个人说明非空时优先使用个人说明。
 style = ""
 # 留空适用于群聊和私聊；群专属条目优先于全局条目。

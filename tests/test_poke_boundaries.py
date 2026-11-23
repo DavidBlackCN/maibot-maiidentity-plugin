@@ -93,6 +93,25 @@ async def test_planner_never_promotes_caller_claims_to_identity(loaded, typed):
 
 
 @pytest.mark.asyncio
+async def test_planner_interleaved_requests_preserve_other_system_items(loaded):
+    plugin, _ = loaded
+
+    async def plan(stream, items):
+        result = await plugin.planner(session_id=stream, item_schema_version=1, items=items)
+        return result["modified_kwargs"]["items"]
+
+    first = await plan("s1", [])
+    assert len(first) == len(await plan("s2", [])) == 1
+    edited = deepcopy(first[0])
+    edited["parts"].append({"type": "text", "text": "另一插件的补充说明"})
+    retried = await plan("s1", [edited, *first])
+    assert len(retried) == 2
+    assert retried[0] == edited
+    assert retried[1]["parts"] == first[0]["parts"]
+    assert len(await plan("s1", [])) == 1
+
+
+@pytest.mark.asyncio
 async def test_private_identity_is_not_public_or_a_management_grant(loaded):
     p, _ = loaded
     before = p.db.conn.total_changes
